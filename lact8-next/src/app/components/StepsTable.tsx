@@ -47,80 +47,88 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto w-full">
-        <table className="data-table">
+        <table className="data-table min-w-[300px] w-full">
           <thead>
             <tr>
-              <th className="w-8">#</th>
-              <th className="w-[4.5rem]">
+              <th className="w-8 px-1">#</th>
+              <th className="w-20 sm:w-32 px-0.5">
                 <span className="hidden sm:inline">Intensity</span>
-                <span className="sm:hidden">Int.</span>
+                <span className="sm:hidden">Int</span>
               </th>
-              <th className="w-[4.5rem]">
+              <th className="w-20 sm:w-32 px-0.5">
                 <span className="hidden sm:inline">Heart Rate</span>
                 <span className="sm:hidden">HR</span>
               </th>
-              <th className="w-[4.5rem]">
+              <th className="w-20 sm:w-32 px-0.5">
                 <span className="hidden sm:inline">Lactate</span>
                 <span className="sm:hidden">Lac</span>
               </th>
-              <th className="w-8"></th>
+              <th className="w-8 px-1"></th>
             </tr>
           </thead>
           <tbody>
             {steps.map((step, index) => (
               <tr key={step.id} className="hover:bg-secondary/50">
-                <td>{index + 1}</td>
-                <td>
-                  <input
-                    type="number"
-                    value={step.intensity || ''}
-                    onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
-                    placeholder="200"
-                    className="data-input w-full"
-                    aria-label="Intensity (power or speed)"
-                    min="0"
-                  />
+                <td className="text-center px-1">{index + 1}</td>
+                <td className="px-0.5">
+                  <div className="relative w-full">
+                    <input
+                      type="number"
+                      value={step.intensity || ''}
+                      onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
+                      placeholder="200"
+                      className="data-input w-full px-1 py-1 text-center"
+                      aria-label="Intensity (power or speed)"
+                      min="0"
+                    />
+                  </div>
                 </td>
-                <td>
-                  <input
-                    type="number"
-                    value={step.heart_rate_bpm || ''}
-                    onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
-                    placeholder="120"
-                    className="data-input w-full"
-                    aria-label="Heart rate in beats per minute"
-                    min="0"
-                    max="250"
-                  />
+                <td className="px-0.5">
+                  <div className="relative w-full">
+                    <input
+                      type="number"
+                      value={step.heart_rate_bpm || ''}
+                      onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
+                      placeholder="120"
+                      className="data-input w-full px-1 py-1 text-center"
+                      aria-label="Heart rate in beats per minute"
+                      min="0"
+                      max="250"
+                    />
+                  </div>
                 </td>
-                <td>
-                  <input
-                    type="number"
-                    value={step.lactate_mmol_l || ''}
-                    onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
-                    placeholder="1.0"
-                    step="0.1"
-                    className="data-input w-full"
-                    aria-label="Lactate in millimoles per liter"
-                    min="0"
-                    max="30"
-                  />
+                <td className="px-0.5">
+                  <div className="relative w-full">
+                    <input
+                      type="number"
+                      value={step.lactate_mmol_l || ''}
+                      onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
+                      placeholder="1.0"
+                      step="0.1"
+                      className="data-input w-full px-1 py-1 text-center"
+                      aria-label="Lactate in millimoles per liter"
+                      min="0"
+                      max="30"
+                    />
+                  </div>
                 </td>
-                <td>
-                  <button 
-                    onClick={() => removeStep(step.id)}
-                    aria-label="Remove step"
-                    className="text-red-500 hover:text-red-700 w-full"
-                  >
-                    ✕
-                  </button>
+                <td className="text-center px-1">
+                  <div className="flex items-center justify-center">
+                    <button 
+                      onClick={() => removeStep(step.id)}
+                      aria-label="Remove step"
+                      className="text-red-500 hover:text-red-700 w-5 h-5 flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="space-y-4">
+      <div>
         <button onClick={addStep} className="btn inline-block">
           Add Step
         </button>
