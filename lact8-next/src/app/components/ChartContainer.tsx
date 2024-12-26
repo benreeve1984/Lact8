@@ -24,7 +24,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
     const ctx = chartRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Create initial empty chart
+    // Create initial empty chart with responsive configuration
     chartInstance.current = new Chart(ctx, {
       type: 'scatter',
       data: {
@@ -34,7 +34,12 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-          padding: 0
+          padding: {
+            top: 5,
+            right: 5,
+            bottom: 5,
+            left: 5
+          }
         },
         scales: {
           x: {
@@ -43,16 +48,11 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               text: 'Intensity',
               padding: { top: 5 },
               font: {
-                size: 14,
-                family: 'system-ui'
+                weight: '600'
               }
             },
             ticks: {
-              padding: 0,
-              font: {
-                size: 12,
-                family: 'system-ui'
-              }
+              padding: 2
             }
           },
           yLactate: {
@@ -63,21 +63,13 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               text: 'Lactate (mmol/L)',
               padding: { bottom: 5 },
               font: {
-                size: 14,
-                family: 'system-ui'
+                weight: '600'
               }
             },
             beginAtZero: true,
             suggestedMax: 0,
             ticks: {
-              padding: 0,
-              maxRotation: 0,
-              autoSkip: true,
-              autoSkipPadding: 10,
-              font: {
-                size: 12,
-                family: 'system-ui'
-              }
+              padding: 2
             }
           },
           yHeartRate: {
@@ -88,22 +80,14 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               text: 'Heart Rate (bpm)',
               padding: { bottom: 5 },
               font: {
-                size: 14,
-                family: 'system-ui'
+                weight: '600'
               }
             },
             grid: {
               drawOnChartArea: false
             },
             ticks: {
-              padding: 0,
-              maxRotation: 0,
-              autoSkip: true,
-              autoSkipPadding: 10,
-              font: {
-                size: 12,
-                family: 'system-ui'
-              }
+              padding: 2
             }
           }
         },
@@ -245,7 +229,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
   }, [steps, lt1, lt2]); // Only run when these props change
 
   return (
-    <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] bg-white rounded-lg shadow-sm p-1 sm:p-4 overflow-hidden">
+    <div className="chart-container">
       <canvas ref={chartRef} className="chart-canvas"></canvas>
     </div>
   );

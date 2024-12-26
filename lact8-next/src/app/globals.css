@@ -61,17 +61,57 @@
 
 /* Chart styles */
 .chart-canvas {
-  font-family: system-ui, -apple-system, sans-serif;
+  @apply font-sans antialiased;
+  font-size: 10px; /* Default size for mobile */
 }
 
-@media (max-width: 640px) {
+/* Base chart text styles */
+.chart-container {
+  @apply w-full bg-white rounded-lg shadow-sm overflow-hidden;
+  @apply h-[280px] sm:h-[350px] md:h-[400px];
+  @apply p-0.5 sm:p-4;
+}
+
+/* Responsive font sizes for chart */
+@screen sm {
   .chart-canvas {
-    font-size: 10px;
+    font-size: 11px;
+  }
+  
+  /* Slightly larger titles on small screens */
+  .chart-canvas [class*="title-"] {
+    font-size: 13px !important;
   }
 }
 
-@media (min-width: 641px) {
+@screen md {
   .chart-canvas {
     font-size: 12px;
   }
+
+  /* Larger axis titles on medium screens */
+  .chart-canvas [class*="title-"] {
+    font-size: 16px !important;
+  }
+}
+
+@screen lg {
+  .chart-canvas {
+    font-size: 13px;
+  }
+
+  /* Much larger axis titles on large screens */
+  .chart-canvas [class*="title-"] {
+    font-size: 18px !important;
+  }
+}
+
+/* Chart annotation styles */
+.chart-annotation {
+  @apply font-sans text-xs sm:text-sm md:text-base;
+}
+
+/* Additional styles for axis titles */
+.chart-canvas [class*="title-"] {
+  @apply font-semibold tracking-wide;
 }
