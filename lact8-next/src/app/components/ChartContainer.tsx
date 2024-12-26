@@ -29,6 +29,9 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
     const ctx = chartRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Calculate max lactate value with padding (20% higher than max)
+    const maxLactateValue = Math.max(...sortedSteps.map(s => s.lactate_mmol_l)) * 1.2;
+
     chartInstance.current = new Chart(ctx, {
       type: 'scatter',
       data: {
@@ -99,7 +102,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               }
             },
             beginAtZero: true,
-            suggestedMax: Math.max(...sortedSteps.map(s => s.lactate_mmol_l)) * 1.2,
+            suggestedMax: maxLactateValue,
             ticks: {
               padding: 0,
               maxRotation: 0,
@@ -150,7 +153,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
                   xMin: lt1.intensity,
                   xMax: lt1.intensity,
                   yMin: 0,
-                  yMax: Math.max(...sortedSteps.map(s => s.lactate_mmol_l)) * 1.2,
+                  yMax: maxLactateValue,
                   borderColor: 'rgba(255, 99, 132, 0.5)',
                   borderWidth: 2,
                   label: {
@@ -171,7 +174,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
                   xMin: lt2.intensity,
                   xMax: lt2.intensity,
                   yMin: 0,
-                  yMax: Math.max(...sortedSteps.map(s => s.lactate_mmol_l)) * 1.2,
+                  yMax: maxLactateValue,
                   borderColor: 'rgba(255, 159, 64, 0.5)',
                   borderWidth: 2,
                   label: {
