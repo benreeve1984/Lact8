@@ -115,3 +115,68 @@
 .chart-canvas [class*="title-"] {
   @apply font-semibold tracking-wide;
 }
+
+/* Analysis Section */
+.analysis-container {
+  @apply space-y-4 p-4 bg-secondary/30 rounded-lg;
+}
+
+.analysis-title {
+  @apply text-[24px] sm:text-2xl font-semibold;
+}
+
+.analysis-message {
+  @apply text-[18px] sm:text-xl;
+}
+
+.analysis-list {
+  @apply list-disc list-inside space-y-1 text-[16px] sm:text-lg;
+}
+
+.chart-title {
+  @apply text-[20px] sm:text-xl font-medium mb-4;
+}
+
+/* Results Section */
+.results-container {
+  @apply space-y-8 overflow-x-hidden;
+}
+
+.results-title {
+  @apply text-[24px] sm:text-2xl font-semibold;
+}
+
+.threshold-grid {
+  @apply grid gap-4 sm:gap-6 md:grid-cols-2;
+}
+
+.threshold-card {
+  @apply space-y-2 p-4 bg-secondary/30 rounded-lg shadow-sm 
+         transition-all hover:shadow-md;
+}
+
+.threshold-card-title {
+  @apply text-[22px] sm:text-[22px] font-medium;
+}
+
+.threshold-value {
+  @apply text-[20px] sm:text-[20px];
+}
+
+/* Markdown Section */
+.markdown-section {
+  @apply space-y-4;
+}
+
+.markdown-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3;
+}
+
+.markdown-title {
+  @apply text-[24px] sm:text-[24px] font-semibold;
+}
+
+.markdown-content {
+  @apply p-3 sm:p-4 bg-secondary rounded-lg shadow-sm overflow-x-auto 
+         text-[16px] sm:text-[16px] font-mono;
+}

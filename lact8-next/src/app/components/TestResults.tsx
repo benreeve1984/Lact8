@@ -91,13 +91,13 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
 
   if (!lt1 && !lt2) {
     return (
-      <div className="space-y-4 p-4 bg-secondary/30 rounded-lg">
-        <h2 className="text-[24px] sm:text-2xl font-semibold">Analysis Complete</h2>
+      <div className="analysis-container">
+        <h2 className="analysis-title">Analysis Complete</h2>
         <div className="space-y-2">
-          <p className="text-[18px] sm:text-xl">
+          <p className="analysis-message">
             No lactate thresholds could be identified from the provided data.
           </p>
-          <ul className="list-disc list-inside space-y-1 text-[16px] sm:text-lg">
+          <ul className="analysis-list">
             <li>Ensure you have at least 4 data points</li>
             <li>Check that intensity values are in ascending order</li>
             <li>Verify lactate values show a clear progression</li>
@@ -107,7 +107,7 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
         
         {steps.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-[20px] sm:text-xl font-medium mb-4">Current Data Visualization:</h3>
+            <h3 className="chart-title">Current Data Visualization:</h3>
             <ChartContainer steps={steps} lt1={null} lt2={null} />
           </div>
         )}
@@ -116,22 +116,21 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
   }
 
   return (
-    <div className="space-y-8 overflow-x-hidden">
+    <div className="results-container">
       <div className="space-y-6">
-        <h2 className="text-[24px] sm:text-2xl font-semibold">Results:</h2>
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+        <h2 className="results-title">Results:</h2>
+        <div className="threshold-grid">
           {thresholdData.map(threshold => (
             (threshold.name === 'lt1' && lt1) || (threshold.name === 'lt2' && lt2) ? (
               <div 
                 key={threshold.name}
-                className="space-y-2 p-4 bg-secondary/30 rounded-lg shadow-sm 
-                          transition-all hover:shadow-md"
+                className="threshold-card"
               >
-                <h3 className="text-[22px] sm:text-[22px] font-medium">
+                <h3 className="threshold-card-title">
                   {threshold.label}:
                 </h3>
                 {threshold.fields.map(field => (
-                  <p key={field.key} className="text-[20px] sm:text-[20px]">
+                  <p key={field.key} className="threshold-value">
                     {field.label}: {field.format(threshold.data[field.key])}
                   </p>
                 ))}
@@ -143,9 +142,9 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
 
       <ChartContainer steps={steps} lt1={lt1} lt2={lt2} />
       
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="text-[24px] sm:text-[24px] font-semibold">Markdown Report</h2>
+      <div className="markdown-section">
+        <div className="markdown-header">
+          <h2 className="markdown-title">Markdown Report</h2>
           <button 
             onClick={copyToClipboard} 
             className="btn inline-flex items-center justify-center"
@@ -153,8 +152,7 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
             <span>Copy Results to Clipboard</span>
           </button>
         </div>
-        <pre className="p-3 sm:p-4 bg-secondary rounded-lg shadow-sm overflow-x-auto 
-                      text-[16px] sm:text-[16px] font-mono">
+        <pre className="markdown-content">
           {markdownContent}
         </pre>
       </div>
