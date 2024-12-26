@@ -54,6 +54,13 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
     );
   };
 
+  const formatLactate = (value: number): string => {
+    // Return empty string if value is 0 (for empty input field)
+    if (value === 0) return '';
+    // Format to always show one decimal place
+    return value.toFixed(1);
+  };
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto w-full">
@@ -117,7 +124,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                   <div className="relative w-full">
                     <input
                       type="number"
-                      value={step.lactate_mmol_l || ''}
+                      value={step.lactate_mmol_l ? formatLactate(step.lactate_mmol_l) : ''}
                       onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
                       placeholder="1.0"
                       step="0.1"

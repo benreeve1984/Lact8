@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Step } from '../types';
 import ChartContainer from './ChartContainer';
 
@@ -27,9 +27,34 @@ interface MarkdownSection {
 }
 
 export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
+  const [markdownContent, setMarkdownContent] = useState('');
+
+  // Helper function to format lactate values
+  const formatLactate = (value: number): string => {
+    return value.toFixed(1);
+  };
+
+  useEffect(() => {
+    // Create markdown table
+    const tableRows = steps.map((step, index) => {
+      return `| ${index + 1} | ${step.intensity} | ${step.heart_rate_bpm} | ${formatLactate(step.lactate_mmol_l)} |`;
+    }).join('\n');
+
+    const markdown = `
+### Lactate Test Results
+
+${lt1 ? `LT1: ${lt1.intensity} @ ${formatLactate(lt1.lactate_mmol_l)} mmol/L (HR: ${lt1.heart_rate_bpm})` : ''}
+${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR: ${lt2.heart_rate_bpm})` : ''}
+
+| Step | Intensity | HR | Lactate |
+|------|-----------|----|---------|\n${tableRows}
+    `.trim();
+
+    setMarkdownContent(markdown);
+  }, [steps, lt1, lt2]);
+
   const formatIntensity = (value: number | null) => value?.toString() ?? 'N/A';
   const formatHeartRate = (value: number | null) => value ? `${value} bpm` : 'N/A';
-  const formatLactate = (value: number | null) => value ? `${value} mmol/L` : 'N/A';
 
   const thresholdData: ThresholdData[] = [
     {
@@ -53,55 +78,6 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
       ]
     }
   ];
-
-  // Memoize the markdown content
-  const markdownContent = useMemo(() => {
-    const sections: MarkdownSection[] = [
-      {
-        title: '# Lactate Test Results\n',
-        content: []
-      }
-    ];
-
-    // Add threshold sections
-    thresholdData.forEach(threshold => {
-      if (threshold.name === 'lt1' && !lt1) return;
-      if (threshold.name === 'lt2' && !lt2) return;
-
-      const thresholdSection: MarkdownSection = {
-        title: `## ${threshold.label}\n`,
-        content: threshold.fields.map(field => 
-          `- ${field.label}: ${field.format(threshold.data[field.key])}`)
-      };
-      sections.push(thresholdSection);
-    });
-
-    // Add raw data section
-    const rawDataSection: MarkdownSection = {
-      title: '## Raw Data\n\n',
-      content: [
-        '| Step # | Intensity | Heart Rate (bpm) | Lactate (mmol/L) |',
-        '|--------|-----------|------------------|------------------|'
-      ]
-    };
-
-    const sortedSteps = [...steps].sort((a, b) => 
-      (a.intensity ?? 0) - (b.intensity ?? 0)
-    );
-
-    sortedSteps.forEach((step, index) => {
-      rawDataSection.content.push(
-        `| ${index + 1} | ${formatIntensity(step.intensity)} | ${formatHeartRate(step.heart_rate_bpm)} | ${formatLactate(step.lactate_mmol_l)} |`
-      );
-    });
-
-    sections.push(rawDataSection);
-
-    // Combine all sections
-    return sections
-      .map(section => [section.title, ...section.content].join('\n'))
-      .join('\n\n');
-  }, [steps, lt1, lt2, thresholdData]); // Dependencies array includes all values used in the calculation
 
   const copyToClipboard = async () => {
     try {
