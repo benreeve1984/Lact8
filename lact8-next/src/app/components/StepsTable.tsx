@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Step } from '../types';
 
 interface StepsTableProps {
@@ -20,7 +20,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
       }));
       onStepsChange(initialSteps);
     }
-  }, []);  // Remove steps and onStepsChange from dependencies to prevent re-initialization
+  }, []); // Keep dependency array empty to prevent re-initialization
 
   const addStep = () => {
     const newStep: Step = {
@@ -52,13 +52,16 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
             <tr>
               <th className="w-8">#</th>
               <th className="w-[4.5rem]">
-                <span className="hidden sm:inline">Int.</span>
-                <span className="sm:hidden">Pwr/Spd</span>
+                <span className="hidden sm:inline">Intensity</span>
+                <span className="sm:hidden">Int.</span>
               </th>
-              <th className="w-[4.5rem]">HR</th>
               <th className="w-[4.5rem]">
-                <span className="hidden sm:inline">Lac</span>
-                <span className="sm:hidden">Lact</span>
+                <span className="hidden sm:inline">Heart Rate</span>
+                <span className="sm:hidden">HR</span>
+              </th>
+              <th className="w-[4.5rem]">
+                <span className="hidden sm:inline">Lactate</span>
+                <span className="sm:hidden">Lac</span>
               </th>
               <th className="w-8"></th>
             </tr>
@@ -74,6 +77,8 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                     onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
                     placeholder="200"
                     className="data-input w-full"
+                    aria-label="Intensity (power or speed)"
+                    min="0"
                   />
                 </td>
                 <td>
@@ -81,8 +86,11 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                     type="number"
                     value={step.heart_rate_bpm || ''}
                     onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
-                    placeholder="103"
+                    placeholder="120"
                     className="data-input w-full"
+                    aria-label="Heart rate in beats per minute"
+                    min="0"
+                    max="250"
                   />
                 </td>
                 <td>
@@ -93,6 +101,9 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                     placeholder="1.0"
                     step="0.1"
                     className="data-input w-full"
+                    aria-label="Lactate in millimoles per liter"
+                    min="0"
+                    max="30"
                   />
                 </td>
                 <td>

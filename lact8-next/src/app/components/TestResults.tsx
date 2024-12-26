@@ -9,34 +9,96 @@ interface TestResultsProps {
   lt2: Step | null;
 }
 
+interface ThresholdData {
+  name: string;
+  label: string;
+  data: Step;
+  fields: Array<{
+    key: keyof Step;
+    label: string;
+    format: (value: number | null) => string;
+  }>;
+}
+
+interface MarkdownSection {
+  title: string;
+  content: string[];
+}
+
 export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
-  const generateMarkdown = () => {
-    let md = `# Lactate Test Results\n\n`;
+  const formatIntensity = (value: number | null) => value?.toString() ?? 'N/A';
+  const formatHeartRate = (value: number | null) => value ? `${value} bpm` : 'N/A';
+  const formatLactate = (value: number | null) => value ? `${value} mmol/L` : 'N/A';
 
-    if (lt1) {
-      md += `## LT1 (Aerobic Threshold)\n`;
-      md += `- Intensity: ${lt1.intensity}\n`;
-      md += `- Heart Rate: ${lt1.heart_rate_bpm} bpm\n`;
-      md += `- Lactate: ${lt1.lactate_mmol_l} mmol/L\n\n`;
+  const thresholdData: ThresholdData[] = [
+    {
+      name: 'lt1',
+      label: 'LT1 (Aerobic Threshold)',
+      data: lt1 ?? {} as Step,
+      fields: [
+        { key: 'intensity', label: 'Intensity', format: formatIntensity },
+        { key: 'heart_rate_bpm', label: 'Heart Rate', format: formatHeartRate },
+        { key: 'lactate_mmol_l', label: 'Lactate', format: formatLactate }
+      ]
+    },
+    {
+      name: 'lt2',
+      label: 'LT2 (Anaerobic Threshold)',
+      data: lt2 ?? {} as Step,
+      fields: [
+        { key: 'intensity', label: 'Intensity', format: formatIntensity },
+        { key: 'heart_rate_bpm', label: 'Heart Rate', format: formatHeartRate },
+        { key: 'lactate_mmol_l', label: 'Lactate', format: formatLactate }
+      ]
     }
+  ];
 
-    if (lt2) {
-      md += `## LT2 (Anaerobic Threshold)\n`;
-      md += `- Intensity: ${lt2.intensity}\n`;
-      md += `- Heart Rate: ${lt2.heart_rate_bpm} bpm\n`;
-      md += `- Lactate: ${lt2.lactate_mmol_l} mmol/L\n\n`;
-    }
+  const generateMarkdown = (): string => {
+    const sections: MarkdownSection[] = [
+      {
+        title: '# Lactate Test Results\n',
+        content: []
+      }
+    ];
 
-    md += `## Raw Data\n\n`;
-    md += `| Step # | Intensity | Heart Rate (bpm) | Lactate (mmol/L) |\n`;
-    md += `|--------|-----------|------------------|------------------|\n`;
+    // Add threshold sections
+    thresholdData.forEach(threshold => {
+      if (threshold.name === 'lt1' && !lt1) return;
+      if (threshold.name === 'lt2' && !lt2) return;
 
-    const sortedSteps = [...steps].sort((a, b) => a.intensity - b.intensity);
-    sortedSteps.forEach((step, index) => {
-      md += `| ${index + 1} | ${step.intensity} | ${step.heart_rate_bpm} | ${step.lactate_mmol_l} |\n`;
+      const thresholdSection: MarkdownSection = {
+        title: `## ${threshold.label}\n`,
+        content: threshold.fields.map(field => 
+          `- ${field.label}: ${field.format(threshold.data[field.key])}`)
+      };
+      sections.push(thresholdSection);
     });
 
-    return md;
+    // Add raw data section
+    const rawDataSection: MarkdownSection = {
+      title: '## Raw Data\n\n',
+      content: [
+        '| Step # | Intensity | Heart Rate (bpm) | Lactate (mmol/L) |',
+        '|--------|-----------|------------------|------------------|'
+      ]
+    };
+
+    const sortedSteps = [...steps].sort((a, b) => 
+      (a.intensity ?? 0) - (b.intensity ?? 0)
+    );
+
+    sortedSteps.forEach((step, index) => {
+      rawDataSection.content.push(
+        `| ${index + 1} | ${formatIntensity(step.intensity)} | ${formatHeartRate(step.heart_rate_bpm)} | ${formatLactate(step.lactate_mmol_l)} |`
+      );
+    });
+
+    sections.push(rawDataSection);
+
+    // Combine all sections
+    return sections
+      .map(section => [section.title, ...section.content].join('\n'))
+      .join('\n\n');
   };
 
   const copyToClipboard = async () => {
@@ -50,34 +112,58 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
     }
   };
 
-  if (!lt1 && !lt2) return null;
+  if (!lt1 && !lt2) {
+    return (
+      <div className="space-y-4 p-4 bg-secondary/30 rounded-lg">
+        <h2 className="text-[24px] sm:text-2xl font-semibold">Analysis Complete</h2>
+        <div className="space-y-2">
+          <p className="text-[18px] sm:text-xl">
+            No lactate thresholds could be identified from the provided data.
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-[16px] sm:text-lg">
+            <li>Ensure you have at least 4 data points</li>
+            <li>Check that intensity values are in ascending order</li>
+            <li>Verify lactate values show a clear progression</li>
+            <li>Look for any outliers or incorrect data entries</li>
+          </ul>
+        </div>
+        
+        {steps.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-[20px] sm:text-xl font-medium mb-4">Current Data Visualization:</h3>
+            <ChartContainer steps={steps} lt1={null} lt2={null} />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 overflow-x-hidden">
       <div className="space-y-6">
         <h2 className="text-[24px] sm:text-2xl font-semibold">Results:</h2>
         <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-          {lt1 && (
-            <div className="space-y-2 p-4 bg-secondary/30 rounded-lg shadow-sm 
-                          transition-all hover:shadow-md">
-              <h3 className="text-[22px] sm:text-[22px] font-medium">LT1 (Aerobic Threshold):</h3>
-              <p className="text-[20px] sm:text-[20px]">Intensity: {lt1.intensity}</p>
-              <p className="text-[20px] sm:text-[20px]">Heart Rate: {lt1.heart_rate_bpm} bpm</p>
-              <p className="text-[20px] sm:text-[20px]">Lactate: {lt1.lactate_mmol_l} mmol/L</p>
-            </div>
-          )}
-          {lt2 && (
-            <div className="space-y-2 p-4 bg-secondary/30 rounded-lg shadow-sm 
-                          transition-all hover:shadow-md">
-              <h3 className="text-[22px] sm:text-[22px] font-medium">LT2 (Anaerobic Threshold):</h3>
-              <p className="text-[20px] sm:text-[20px]">Intensity: {lt2.intensity}</p>
-              <p className="text-[20px] sm:text-[20px]">Heart Rate: {lt2.heart_rate_bpm} bpm</p>
-              <p className="text-[20px] sm:text-[20px]">Lactate: {lt2.lactate_mmol_l} mmol/L</p>
-            </div>
-          )}
+          {thresholdData.map(threshold => (
+            (threshold.name === 'lt1' && lt1) || (threshold.name === 'lt2' && lt2) ? (
+              <div 
+                key={threshold.name}
+                className="space-y-2 p-4 bg-secondary/30 rounded-lg shadow-sm 
+                          transition-all hover:shadow-md"
+              >
+                <h3 className="text-[22px] sm:text-[22px] font-medium">
+                  {threshold.label}:
+                </h3>
+                {threshold.fields.map(field => (
+                  <p key={field.key} className="text-[20px] sm:text-[20px]">
+                    {field.label}: {field.format(threshold.data[field.key])}
+                  </p>
+                ))}
+              </div>
+            ) : null
+          ))}
         </div>
       </div>
-      
+
       <ChartContainer steps={steps} lt1={lt1} lt2={lt2} />
       
       <div className="space-y-4">

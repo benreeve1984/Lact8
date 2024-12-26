@@ -22,12 +22,18 @@ function calculateDistance(x1: number, y1: number, x2: number, y2: number, x: nu
 export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps) {
   const [lt1, setLt1] = useState<Step | null>(null);
   const [lt2, setLt2] = useState<Step | null>(null);
+  const [hasCalculated, setHasCalculated] = useState(false);
 
   const calculateThresholds = () => {
     if (steps.length < 4) {
       alert('Please add at least 4 steps to calculate thresholds');
       return;
     }
+
+    // Reset previous results
+    setLt1(null);
+    setLt2(null);
+    setHasCalculated(true);
 
     // Sort steps by intensity to ensure correct order
     const sortedSteps = [...steps].sort((a, b) => a.intensity - b.intensity);
@@ -78,17 +84,13 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
       }
     }
 
-    // Set thresholds if found
+    // Set the thresholds if found
     if (lt1Index !== -1) {
       setLt1(sortedSteps[lt1Index]);
-    } else {
-      setLt1(null);
     }
     
     if (lt2Index !== -1) {
       setLt2(sortedSteps[lt2Index]);
-    } else {
-      setLt2(null);
     }
   };
 
@@ -100,7 +102,9 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
       >
         Calculate Thresholds
       </button>
-      <TestResults steps={steps} lt1={lt1} lt2={lt2} />
+      {hasCalculated && (
+        <TestResults steps={steps} lt1={lt1} lt2={lt2} />
+      )}
     </div>
   );
 } 

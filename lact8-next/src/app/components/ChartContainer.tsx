@@ -74,13 +74,15 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               text: 'Intensity',
               padding: { top: 5 },
               font: {
-                size: window.innerWidth < 640 ? 11 : 14
+                size: 14,
+                family: 'system-ui'
               }
             },
             ticks: {
               padding: 0,
               font: {
-                size: window.innerWidth < 640 ? 10 : 12
+                size: 12,
+                family: 'system-ui'
               }
             }
           },
@@ -89,10 +91,11 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
             position: 'left',
             title: {
               display: true,
-              text: window.innerWidth < 640 ? 'Lactate' : 'Lactate (mmol/L)',
+              text: 'Lactate (mmol/L)',
               padding: { bottom: 5 },
               font: {
-                size: window.innerWidth < 640 ? 11 : 14
+                size: 14,
+                family: 'system-ui'
               }
             },
             beginAtZero: true,
@@ -103,7 +106,8 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               autoSkip: true,
               autoSkipPadding: 10,
               font: {
-                size: window.innerWidth < 640 ? 10 : 12
+                size: 12,
+                family: 'system-ui'
               }
             }
           },
@@ -112,10 +116,11 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
             position: 'right',
             title: {
               display: true,
-              text: window.innerWidth < 640 ? 'HR' : 'Heart Rate (bpm)',
+              text: 'Heart Rate (bpm)',
               padding: { bottom: 5 },
               font: {
-                size: window.innerWidth < 640 ? 11 : 14
+                size: 14,
+                family: 'system-ui'
               }
             },
             grid: {
@@ -127,7 +132,8 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
               autoSkip: true,
               autoSkipPadding: 10,
               font: {
-                size: window.innerWidth < 640 ? 10 : 12
+                size: 12,
+                family: 'system-ui'
               }
             }
           }
@@ -151,7 +157,11 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
                     display: true,
                     content: 'LT1',
                     position: 'end',
-                    yAdjust: -5
+                    yAdjust: -5,
+                    font: {
+                      size: 12,
+                      family: 'system-ui'
+                    }
                   }
                 }
               }),
@@ -168,7 +178,11 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
                     display: true,
                     content: 'LT2',
                     position: 'end',
-                    yAdjust: -5
+                    yAdjust: -5,
+                    font: {
+                      size: 12,
+                      family: 'system-ui'
+                    }
                   }
                 }
               }),
@@ -200,7 +214,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
 
   return (
     <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] bg-white rounded-lg shadow-sm p-1 sm:p-4 overflow-hidden">
-      <canvas ref={chartRef}></canvas>
+      <canvas ref={chartRef} className="chart-canvas"></canvas>
     </div>
   );
 } 
