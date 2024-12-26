@@ -45,61 +45,72 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <table>
-        <thead>
-          <tr>
-            <th>Step #</th>
-            <th>Intensity</th>
-            <th>Heart Rate</th>
-            <th>Lactate</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {steps.map((step, index) => (
-            <tr key={step.id}>
-              <td>{index + 1}</td>
-              <td>
-                <input
-                  type="number"
-                  value={step.intensity || ''}
-                  onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
-                  placeholder="e.g. 200"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  value={step.heart_rate_bpm || ''}
-                  onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
-                  placeholder="e.g. 103"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  value={step.lactate_mmol_l || ''}
-                  onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
-                  placeholder="e.g. 1.0"
-                  step="0.1"
-                />
-              </td>
-              <td>
-                <button
-                  onClick={() => removeStep(step.id)}
-                  className="btn btn-danger"
-                  aria-label="Remove step"
-                >
-                  🗑️
-                </button>
-              </td>
+    <div className="space-y-4">
+      <div className="overflow-x-auto w-full">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th className="w-8">#</th>
+              <th className="w-[4.5rem]">
+                <span className="hidden sm:inline">Int.</span>
+                <span className="sm:hidden">Pwr/Spd</span>
+              </th>
+              <th className="w-[4.5rem]">HR</th>
+              <th className="w-[4.5rem]">
+                <span className="hidden sm:inline">Lac</span>
+                <span className="sm:hidden">Lact</span>
+              </th>
+              <th className="w-8"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex gap-4 mt-4">
-        <button onClick={addStep} className="btn btn-primary">
+          </thead>
+          <tbody>
+            {steps.map((step, index) => (
+              <tr key={step.id} className="hover:bg-secondary/50">
+                <td>{index + 1}</td>
+                <td>
+                  <input
+                    type="number"
+                    value={step.intensity || ''}
+                    onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
+                    placeholder="200"
+                    className="data-input w-full"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    value={step.heart_rate_bpm || ''}
+                    onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
+                    placeholder="103"
+                    className="data-input w-full"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    value={step.lactate_mmol_l || ''}
+                    onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
+                    placeholder="1.0"
+                    step="0.1"
+                    className="data-input w-full"
+                  />
+                </td>
+                <td>
+                  <button 
+                    onClick={() => removeStep(step.id)}
+                    aria-label="Remove step"
+                    className="text-red-500 hover:text-red-700 w-full"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="space-y-4">
+        <button onClick={addStep} className="btn inline-block">
           Add Step
         </button>
       </div>

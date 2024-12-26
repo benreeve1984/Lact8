@@ -31,20 +31,17 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen py-8">
-      <div id="main-container" className="max-w-6xl mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">Lact8</h1>
+    <main className="min-h-screen overflow-y-auto pb-8">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
+        <h1 className="text-2xl sm:text-3xl font-bold my-4">Lact8</h1>
         <div className="space-y-4">
-          <div className="flex justify-end mb-4">
-            <button 
-              onClick={populateDemoData}
-              className="btn btn-primary"
-            >
+          <StepsTable steps={steps} onStepsChange={setSteps} />
+          <div className="space-y-4">
+            <button onClick={populateDemoData} className="btn inline-block">
               Populate Demo Test
             </button>
+            <ThresholdCalculator steps={steps} />
           </div>
-          <StepsTable steps={steps} onStepsChange={setSteps} />
-          <ThresholdCalculator steps={steps} />
         </div>
       </div>
     </main>
