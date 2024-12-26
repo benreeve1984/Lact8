@@ -35,17 +35,18 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
   };
 
   useEffect(() => {
-    // Create markdown table
+    // Create markdown table with improved formatting
     const tableRows = steps.map((step, index) => {
       return `| ${index + 1} | ${step.intensity} | ${step.heart_rate_bpm} | ${formatLactate(step.lactate_mmol_l)} |`;
     }).join('\n');
 
     const markdown = `
-### Lactate Test Results
+# Lactate Test Results
 
-${lt1 ? `LT1: ${lt1.intensity} @ ${formatLactate(lt1.lactate_mmol_l)} mmol/L (HR: ${lt1.heart_rate_bpm})` : ''}
-${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR: ${lt2.heart_rate_bpm})` : ''}
+${lt1 ? `**LT1 (Aerobic Threshold):**\n- Intensity: ${lt1.intensity}\n- Heart Rate: ${lt1.heart_rate_bpm} bpm\n- Lactate: ${formatLactate(lt1.lactate_mmol_l)} mmol/L\n` : ''}
+${lt2 ? `\n**LT2 (Anaerobic Threshold):**\n- Intensity: ${lt2.intensity}\n- Heart Rate: ${lt2.heart_rate_bpm} bpm\n- Lactate: ${formatLactate(lt2.lactate_mmol_l)} mmol/L\n` : ''}
 
+## Test Steps
 | Step | Intensity | HR | Lactate |
 |------|-----------|----|---------|\n${tableRows}
     `.trim();
@@ -145,16 +146,21 @@ ${lt2 ? `LT2: ${lt2.intensity} @ ${formatLactate(lt2.lactate_mmol_l)} mmol/L (HR
       <div className="markdown-section">
         <div className="markdown-header">
           <h2 className="markdown-title">Markdown Report</h2>
-          <button 
-            onClick={copyToClipboard} 
-            className="btn inline-flex items-center justify-center"
-          >
-            <span>Copy Results to Clipboard</span>
-          </button>
+          <div className="markdown-actions">
+            <button 
+              onClick={copyToClipboard} 
+              className="btn inline-flex items-center justify-center gap-2"
+            >
+              <span className="hidden sm:inline">Copy Results to Clipboard</span>
+              <span className="sm:hidden">Copy</span>
+            </button>
+          </div>
         </div>
-        <pre className="markdown-content">
-          {markdownContent}
-        </pre>
+        <div className="markdown-wrapper">
+          <pre className="markdown-content">
+            {markdownContent}
+          </pre>
+        </div>
       </div>
     </div>
   );
