@@ -178,7 +178,7 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <button 
         onClick={calculateThresholds} 
         className="btn inline-block"

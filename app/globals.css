@@ -30,3 +30,11 @@
 .data-input[type=number] {
   -moz-appearance: textfield;
 } 
+
+:root {
+  --color-blue-500: 59 130 246;
+  --color-orange-500: 249 115 22;
+  --color-rose-500: 244 63 94;
+  --color-amber-500: 245 158 11;
+  --color-gray-300: 209 213 219;
+} 
