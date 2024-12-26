@@ -117,11 +117,78 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
     onStepsChange(steps.filter(step => step.id !== id));
   };
 
-  const formatLactate = (value: number): string => {
-    // Return empty string if value is 0 (for empty input field)
-    if (value === 0) return '';
-    // Format to always show one decimal place
-    return value.toFixed(1);
+  // Simplified input field configuration
+  const inputFields: Array<{
+    key: keyof Step;
+    label: string;
+    shortLabel: string;
+    config: typeof VALIDATION_RULES[keyof typeof VALIDATION_RULES];
+    format?: (value: number) => string;
+  }> = [
+    { 
+      key: 'intensity', 
+      label: 'Intensity',
+      shortLabel: 'Int',
+      config: VALIDATION_RULES.intensity 
+    },
+    { 
+      key: 'heart_rate_bpm', 
+      label: 'Heart Rate',
+      shortLabel: 'HR',
+      config: VALIDATION_RULES.heart_rate_bpm 
+    },
+    { 
+      key: 'lactate_mmol_l', 
+      label: 'Lactate',
+      shortLabel: 'Lac',
+      config: VALIDATION_RULES.lactate_mmol_l,
+      format: (value: number) => value === 0 ? '' : value.toFixed(1)
+    }
+  ];
+
+  // Reusable input field component
+  const InputField = ({ 
+    step, 
+    index, 
+    field 
+  }: { 
+    step: Step; 
+    index: number; 
+    field: typeof inputFields[number];
+  }) => {
+    const error = getFieldError(step.id, field.key);
+    const value = field.format 
+      ? field.format(step[field.key]) 
+      : step[field.key] || '';
+
+    return (
+      <td className="px-0.5">
+        <div className="relative w-full">
+          <input
+            id={`${field.key}-${step.id}`}
+            type="number"
+            value={value}
+            onChange={(e) => updateStep(step.id, field.key, e.target.value)}
+            placeholder={field.config.placeholder}
+            min={field.config.min}
+            max={field.config.max}
+            step={field.config.step}
+            className={`data-input ${error ? 'border-red-500' : ''}`}
+            aria-label={`${field.label} for step ${index + 1}`}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${field.key}-error-${step.id}` : undefined}
+          />
+          {error && (
+            <div 
+              id={`${field.key}-error-${step.id}`}
+              className="absolute left-0 top-full mt-1 text-sm text-red-600"
+            >
+              {error}
+            </div>
+          )}
+        </div>
+      </td>
+    );
   };
 
   // Helper function to get field-specific error
@@ -141,18 +208,16 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
               <th className="w-[5%] min-w-[2rem] px-1" scope="col">
                 #
               </th>
-              <th className="w-[30%] min-w-[6rem] px-0.5" scope="col">
-                <span className="hidden sm:inline">Intensity</span>
-                <span className="sm:hidden">Int</span>
-              </th>
-              <th className="w-[30%] min-w-[6rem] px-0.5" scope="col">
-                <span className="hidden sm:inline">Heart Rate</span>
-                <span className="sm:hidden">HR</span>
-              </th>
-              <th className="w-[30%] min-w-[6rem] px-0.5" scope="col">
-                <span className="hidden sm:inline">Lactate</span>
-                <span className="sm:hidden">Lac</span>
-              </th>
+              {inputFields.map(field => (
+                <th 
+                  key={field.key} 
+                  className="w-[30%] min-w-[6rem] px-0.5" 
+                  scope="col"
+                >
+                  <span className="hidden sm:inline">{field.label}</span>
+                  <span className="sm:hidden">{field.shortLabel}</span>
+                </th>
+              ))}
               <th className="w-[5%] min-w-[2rem] px-1" scope="col">
                 <span className="sr-only">Actions</span>
               </th>
@@ -164,84 +229,14 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                 <td className="text-center px-1">
                   {index + 1}
                 </td>
-                <td className="px-0.5">
-                  <div className="relative w-full">
-                    <input
-                      id={`intensity-${step.id}`}
-                      type="number"
-                      value={step.intensity || ''}
-                      onChange={(e) => updateStep(step.id, 'intensity', e.target.value)}
-                      placeholder={VALIDATION_RULES.intensity.placeholder}
-                      min={VALIDATION_RULES.intensity.min}
-                      max={VALIDATION_RULES.intensity.max}
-                      step={VALIDATION_RULES.intensity.step}
-                      className={`data-input ${getFieldError(step.id, 'intensity') ? 'border-red-500' : ''}`}
-                      aria-label={`Intensity for step ${index + 1}`}
-                      aria-invalid={!!getFieldError(step.id, 'intensity')}
-                      aria-describedby={`intensity-error-${step.id}`}
-                    />
-                    {getFieldError(step.id, 'intensity') && (
-                      <div 
-                        id={`intensity-error-${step.id}`}
-                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
-                      >
-                        {getFieldError(step.id, 'intensity')}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-0.5">
-                  <div className="relative w-full">
-                    <input
-                      id={`heart-rate-${step.id}`}
-                      type="number"
-                      value={step.heart_rate_bpm || ''}
-                      onChange={(e) => updateStep(step.id, 'heart_rate_bpm', e.target.value)}
-                      placeholder={VALIDATION_RULES.heart_rate_bpm.placeholder}
-                      min={VALIDATION_RULES.heart_rate_bpm.min}
-                      max={VALIDATION_RULES.heart_rate_bpm.max}
-                      step={VALIDATION_RULES.heart_rate_bpm.step}
-                      className={`data-input ${getFieldError(step.id, 'heart_rate_bpm') ? 'border-red-500' : ''}`}
-                      aria-label={`Heart rate for step ${index + 1}`}
-                      aria-invalid={!!getFieldError(step.id, 'heart_rate_bpm')}
-                      aria-describedby={`heart-rate-error-${step.id}`}
-                    />
-                    {getFieldError(step.id, 'heart_rate_bpm') && (
-                      <div 
-                        id={`heart-rate-error-${step.id}`}
-                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
-                      >
-                        {getFieldError(step.id, 'heart_rate_bpm')}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-0.5">
-                  <div className="relative w-full">
-                    <input
-                      id={`lactate-${step.id}`}
-                      type="number"
-                      value={step.lactate_mmol_l ? formatLactate(step.lactate_mmol_l) : ''}
-                      onChange={(e) => updateStep(step.id, 'lactate_mmol_l', e.target.value)}
-                      placeholder={VALIDATION_RULES.lactate_mmol_l.placeholder}
-                      min={VALIDATION_RULES.lactate_mmol_l.min}
-                      max={VALIDATION_RULES.lactate_mmol_l.max}
-                      step={VALIDATION_RULES.lactate_mmol_l.step}
-                      className={`data-input ${getFieldError(step.id, 'lactate_mmol_l') ? 'border-red-500' : ''}`}
-                      aria-label={`Lactate for step ${index + 1}`}
-                      aria-invalid={!!getFieldError(step.id, 'lactate_mmol_l')}
-                      aria-describedby={`lactate-error-${step.id}`}
-                    />
-                    {getFieldError(step.id, 'lactate_mmol_l') && (
-                      <div 
-                        id={`lactate-error-${step.id}`}
-                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
-                      >
-                        {getFieldError(step.id, 'lactate_mmol_l')}
-                      </div>
-                    )}
-                  </div>
-                </td>
+                {inputFields.map(field => (
+                  <InputField
+                    key={`${step.id}-${field.key}`}
+                    step={step}
+                    index={index}
+                    field={field}
+                  />
+                ))}
                 <td className="text-center px-1">
                   <div className="flex justify-center">
                     <button 
