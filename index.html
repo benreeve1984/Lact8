@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lact8</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js Annotation Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    /* Minimal modern styling similar to Notion AI */
+    body {
+      margin: 0; 
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, 
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      background-color: #fff;
+      color: #444;
+    }
+    #main-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    /* Table Styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead tr {
+      background-color: #f3f3f3;
+    }
+    th, td {
+      border: 1px solid #e2e2e2;
+      padding: 12px 8px;
+      text-align: center;
+    }
+    th {
+      font-weight: 600;
+    }
+    #steps-table tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+    #steps-table input {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    /* Button Styling */
+    button {
+      cursor: pointer;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #f0f0f0;
+      font-size: 14px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #e0e0e0;
+    }
+    #addStepBtn {
+      background-color: #4f8ef7;
+      color: white;
+      font-weight: 600;
+    }
+    #addStepBtn:hover {
+      background-color: #407ad6;
+    }
+    #calculateBtn {
+      background-color: #4f8ef7;
+      color: white;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    #calculateBtn:hover {
+      background-color: #407ad6;
+    }
+    /* Delete Button Styling */
+    .delete-btn {
+      background: none; 
+      border: none; 
+      cursor: pointer;
+      color: #999;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .delete-btn:hover {
+      background-color: #fce8e6;
+      color: #e74c3c;
+    }
+    .delete-icon {
+      width: 20px;
+      height: 20px;
+      fill: #999;
+      transition: fill 0.2s ease;
+    }
+    .delete-btn:hover .delete-icon {
+      fill: #e74c3c;
+    }
+    /* Chart Styling */
+    #chart-container {
+      position: relative;
+      height: 400px;
+      margin-top: 32px;
+    }
+    /* Report Styling */
+    #report {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #f9f9f9;
+      border-left: 4px solid #4f8ef7;
+    }
+    #report h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+    }
+    #report p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+    /* Markdown Section Styling */
+    #markdown-section {
+      margin-top: 32px;
+      padding: 16px;
+      background-color: #f3f3f3;
+      border-radius: 6px;
+    }
+    #markdown-section pre {
+      background-color: #fff;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: auto;
+    }
+    #copyBtn {
+      margin-top: 8px;
+      background-color: #2ecc71;
+      color: white;
+    }
+    #copyBtn:hover {
+      background-color: #27ae60;
+    }
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 600px) {
+      th, td {
+        padding: 8px 4px;
+      }
+      #steps-table input {
+        padding: 4px;
+      }
+      button {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      #chart-container {
+        height: 300px;
+      }
+      #report h2 {
+        font-size: 16px;
+      }
+      #report p {
+        font-size: 12px;
+      }
+      #markdown-section pre {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="main-container">
+    <h1>Lact8</h1>
+    <!-- Data Input Section -->
+    <table id="steps-table">
+      <thead>
+        <tr>
+          <th>Step #</th>
+          <th>Intensity</th>
+          <th>Heart Rate</th>
+          <th>Lactate</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Five initial empty steps -->
+      </tbody>
+    </table>
+    <div style="margin-top: 16px;">
+      <button id="addStepBtn">Add Step</button>
+      <button id="calculateBtn">Calculate & Visualize</button>
+    </div>
+
+    <!-- Report Section -->
+    <div id="report" style="display: none;">
+      <h2>Test Results</h2>
+      <div id="lt1-report">
+        <!-- LT1 details will be inserted here -->
+      </div>
+      <div id="lt2-report">
+        <!-- LT2 details will be inserted here -->
+      </div>
+    </div>
+
+    <!-- Chart Display -->
+    <div id="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <!-- Markdown Report Section -->
+    <div id="markdown-section" style="display: none;">
+      <h2>Markdown Report</h2>
+      <pre id="markdown-content">
+<!-- Markdown content will be inserted here -->
+      </pre>
+      <button id="copyBtn">Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <script>
+    /*********************************************************************
+     * 1. INITIAL TABLE POPULATION
+     *********************************************************************/
+    const stepsTableBody = document.querySelector('#steps-table tbody');
+    const addStepBtn = document.getElementById('addStepBtn');
+    const calculateBtn = document.getElementById('calculateBtn');
+
+    // Pre-fill 5 empty steps
+    for (let i = 0; i < 5; i++) {
+      addRow();
+    }
+
+    function addRow(step = {}) {
+      const tr = document.createElement('tr');
+
+      // Step Number
+      let tdStep = document.createElement('td');
+      tdStep.className = 'step-number';
+      tdStep.textContent = ''; // Will be set later
+      tr.appendChild(tdStep);
+
+      // Intensity
+      let tdIntensity = document.createElement('td');
+      let inputIntensity = document.createElement('input');
+      inputIntensity.type = 'number';
+      inputIntensity.placeholder = 'e.g. 200';
+      inputIntensity.min = '0';
+      tdIntensity.appendChild(inputIntensity);
+      tr.appendChild(tdIntensity);
+
+      // Heart Rate
+      let tdHR = document.createElement('td');
+      let inputHR = document.createElement('input');
+      inputHR.type = 'number';
+      inputHR.placeholder = 'e.g. 103';
+      inputHR.min = '0';
+      tdHR.appendChild(inputHR);
+      tr.appendChild(tdHR);
+
+      // Lactate
+      let tdLactate = document.createElement('td');
+      let inputLactate = document.createElement('input');
+      inputLactate.type = 'number';
+      inputLactate.step = '0.1';
+      inputLactate.placeholder = 'e.g. 1.0';
+      inputLactate.min = '0';
+      tdLactate.appendChild(inputLactate);
+      tr.appendChild(tdLactate);
+
+      // Delete button with modern SVG icon
+      let tdDelete = document.createElement('td');
+      let deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.innerHTML = `
+        <svg class="delete-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+          <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64v32c0 17.7 14.3 32 32 32h32v352c0 35.3 28.7 64 64 64h192c35.3 0 64-28.7 64-64V160h32c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32h-96l-7.2-14.3C306.5 6.8 288.4 0 269.3 0H178.7c-19.1 0-37.2 6.8-43.5 17.7zM384 160H64v288c0 8.8 7.2 16 16 16h192c8.8 0 16-7.2 16-16V160z"/>
+        </svg>
+      `;
+      deleteBtn.onclick = () => {
+        tr.remove();
+        renumberSteps();
+      };
+      tdDelete.appendChild(deleteBtn);
+      tr.appendChild(tdDelete);
+
+      stepsTableBody.appendChild(tr);
+      renumberSteps();
+    }
+
+    // Add new step on button click
+    addStepBtn.addEventListener('click', () => {
+      addRow();
+    });
+
+    // Function to renumber step numbers
+    function renumberSteps() {
+      const rows = stepsTableBody.querySelectorAll('tr');
+      rows.forEach((row, index) => {
+        const stepNumberCell = row.querySelector('.step-number');
+        stepNumberCell.textContent = index + 1;
+      });
+    }
+
+    /*********************************************************************
+     * 2. DATA EXTRACTION & VALIDATION
+     *********************************************************************/
+    function parseSteps() {
+      const rows = stepsTableBody.querySelectorAll('tr');
+      const steps = [];
+      const requiredFields = ['intensity', 'heart_rate_bpm', 'lactate_mmol_l'];
+
+      rows.forEach((row, index) => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length < 3) return; // skip if malformed row
+
+        const intensity = Number(inputs[0].value);
+        const heart_rate_bpm = Number(inputs[1].value);
+        const lactate_mmol_l = Number(inputs[2].value);
+
+        // Basic presence and validity check
+        if (
+          !inputs[0].value ||
+          !inputs[1].value ||
+          !inputs[2].value ||
+          isNaN(intensity) ||
+          isNaN(heart_rate_bpm) ||
+          isNaN(lactate_mmol_l) ||
+          intensity < 0 ||
+          heart_rate_bpm < 0 ||
+          lactate_mmol_l < 0
+        ) {
+          throw new Error(`Invalid or missing fields in Step ${index + 1}. Please ensure all fields are correctly filled.`);
+        }
+
+        steps.push({
+          step_number: index + 1,
+          intensity,
+          heart_rate_bpm,
+          lactate_mmol_l
+        });
+      });
+
+      if (steps.length < 3) {
+        throw new Error("At least 3 steps are required to perform calculations.");
+      }
+
+      return steps;
+    }
+
+    /*********************************************************************
+     * 3. LT1 & LT2 IDENTIFICATION LOGIC (same approach as Python)
+     *********************************************************************/
+    function identifyLT1(steps, delta_lactate = 0.3) {
+      for (let i = 0; i < steps.length - 2; i++) {
+        let current = steps[i];
+        let next1 = steps[i + 1];
+        let next2 = steps[i + 2];
+
+        let lactate_diff1 = next1.lactate_mmol_l - current.lactate_mmol_l;
+        let lactate_diff2 = next2.lactate_mmol_l - current.lactate_mmol_l;
+
+        if (lactate_diff1 >= delta_lactate && lactate_diff2 >= delta_lactate) {
+          return {
+            step_number: current.step_number,
+            intensity: current.intensity,
+            heart_rate_bpm: current.heart_rate_bpm,
+            lactate_mmol_l: current.lactate_mmol_l
+          };
+        }
+      }
+      return null;
+    }
+
+    // Helper for vertical distance
+    function calculateDistance(x1, y1, x2, y2, x, y) {
+      if (x2 === x1) {
+        return Math.abs(y - y1);
+      }
+      const slope = (y2 - y1) / (x2 - x1);
+      const intercept = y1 - slope * x1;
+      const expectedY = slope * x + intercept;
+      return Math.abs(y - expectedY);
+    }
+
+    function identifyLT2(steps, lt1) {
+      if (!lt1) return null;
+
+      // Find max lactate
+      let maxLactate = Math.max(...steps.map(s => s.lactate_mmol_l));
+      // Among those with max lactate, pick one with highest intensity
+      let maxCandidates = steps.filter(s => s.lactate_mmol_l === maxLactate);
+      let maxStep = maxCandidates.reduce((acc, curr) =>
+        curr.intensity > acc.intensity ? curr : acc
+      );
+
+      // line from LT1 to max lactate step
+      const x1 = lt1.intensity;
+      const y1 = lt1.lactate_mmol_l;
+      const x2 = maxStep.intensity;
+      const y2 = maxStep.lactate_mmol_l;
+
+      let maxDistance = -1;
+      let lt2_step = null;
+
+      // We only consider steps between these two intensities
+      for (let step of steps) {
+        const x = step.intensity;
+        const y = step.lactate_mmol_l;
+        if (x > Math.min(x1, x2) && x < Math.max(x1, x2)) {
+          let dist = calculateDistance(x1, y1, x2, y2, x, y);
+          if (dist > maxDistance) {
+            maxDistance = dist;
+            lt2_step = step;
+          }
+        }
+      }
+      return lt2_step ? {
+        step_number: lt2_step.step_number,
+        intensity: lt2_step.intensity,
+        heart_rate_bpm: lt2_step.heart_rate_bpm,
+        lactate_mmol_l: lt2_step.lactate_mmol_l
+      } : null;
+    }
+
+    /*********************************************************************
+     * 4. CHART DRAWING USING CHART.JS
+     *********************************************************************/
+    let chartRef = null; // to store and update chart instance if recalculating
+
+    function drawChart(steps, lt1, lt2) {
+      // If a previous chart exists, destroy it first
+      if (chartRef) {
+        chartRef.destroy();
+      }
+
+      const ctx = document.getElementById('chart').getContext('2d');
+
+      // Sort by intensity for plotting
+      steps = steps.slice().sort((a, b) => a.intensity - b.intensity);
+      const intensities = steps.map(s => s.intensity);
+      const lactates = steps.map(s => s.lactate_mmol_l);
+      const heartRates = steps.map(s => s.heart_rate_bpm);
+
+      // Prepare chart datasets (line with x= intensity, y= lactate or HR)
+      const data = {
+        datasets: [
+          {
+            label: 'Lactate (mmol/L)',
+            data: steps.map(s => ({ x: s.intensity, y: s.lactate_mmol_l })),
+            borderColor: 'blue',
+            backgroundColor: 'blue',
+            yAxisID: 'yLactate',
+            tension: 0,              // no curve
+            showLine: true,
+            pointStyle: 'circle'
+          },
+          {
+            label: 'Heart Rate (bpm)',
+            data: steps.map(s => ({ x: s.intensity, y: s.heart_rate_bpm })),
+            borderColor: 'orange',
+            backgroundColor: 'orange',
+            yAxisID: 'yHeartRate',
+            tension: 0,
+            showLine: true,
+            pointStyle: 'rect'
+          }
+        ]
+      };
+
+      // Create annotation objects for LT1 & LT2 vertical lines and the diagonal
+      const annotations = {};
+
+      if (lt1) {
+        annotations['LT1-line'] = {
+          type: 'line',
+          xMin: lt1.intensity,
+          xMax: lt1.intensity,
+          borderColor: 'green',
+          borderWidth: 2,
+          borderDash: [6, 6],
+          label: {
+            content: 'LT1',
+            enabled: true,
+            position: 'start',
+            backgroundColor: 'rgba(0,0,0,0)',
+            color: 'green',
+            font: {
+              style: 'bold'
+            }
+          }
+        };
+      }
+      if (lt2) {
+        annotations['LT2-line'] = {
+          type: 'line',
+          xMin: lt2.intensity,
+          xMax: lt2.intensity,
+          borderColor: 'red',
+          borderWidth: 2,
+          borderDash: [6, 6],
+          label: {
+            content: 'LT2',
+            enabled: true,
+            position: 'start',
+            backgroundColor: 'rgba(0,0,0,0)',
+            color: 'red',
+            font: {
+              style: 'bold'
+            }
+          }
+        };
+      }
+
+      // Diagonal line from LT1 to max lactate step
+      if (lt1) {
+        let maxLactate = Math.max(...steps.map(s => s.lactate_mmol_l));
+        let maxCandidates = steps.filter(s => s.lactate_mmol_l === maxLactate);
+        let maxStep = maxCandidates.reduce((acc, curr) =>
+          curr.intensity > acc.intensity ? curr : acc
+        );
+
+        annotations['Diagonal'] = {
+          type: 'line',
+          xMin: lt1.intensity,
+          yMin: lt1.lactate_mmol_l,
+          xMax: maxStep.intensity,
+          yMax: maxStep.lactate_mmol_l,
+          borderColor: 'lightgrey',
+          borderWidth: 2,
+          borderDash: [3, 3],
+          label: {
+            content: 'LT1 to Max Lactate',
+            enabled: false
+          }
+        };
+      }
+
+      chartRef = new Chart(ctx, {
+        type: 'scatter',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'Intensity (units)' },
+              min: Math.min(...intensities) - 20,
+              max: Math.max(...intensities) + 20,
+              ticks: {
+                // Display only the actual intensity values
+                callback: function(value, index, values) {
+                  if (intensities.includes(value)) {
+                    return value;
+                  }
+                  return '';
+                }
+              }
+            },
+            yLactate: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Lactate (mmol/L)' },
+              ticks: {
+                stepSize: 2
+              }
+            },
+            yHeartRate: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: 'Heart Rate (bpm)' },
+              grid: {
+                drawOnChartArea: false, // only want the grid lines for one axis to show up
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Lactate Threshold Analysis',
+              font: {
+                size: 18
+              }
+            },
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 20
+              }
+            },
+            annotation: {
+              annotations: annotations
+            }
+          }
+        }
+      });
+    }
+
+    /*********************************************************************
+     * 5. MAIN BUTTON EVENT
+     *********************************************************************/
+    calculateBtn.addEventListener('click', () => {
+      let steps;
+      try {
+        steps = parseSteps();
+      } catch (error) {
+        alert("Data Validation Error: " + error.message);
+        return;
+      }
+
+      // Identify LT1 & LT2
+      const lt1 = identifyLT1(steps, 0.3);
+      const lt2 = identifyLT2(steps, lt1);
+
+      // Display Report
+      displayReport(lt1, lt2);
+
+      // Draw chart if we have steps
+      if (steps && steps.length > 0) {
+        drawChart(steps, lt1, lt2);
+      }
+
+      // Generate Markdown
+      generateMarkdown(steps, lt1, lt2);
+    });
+
+    /*********************************************************************
+     * 6. DISPLAY REPORT
+     *********************************************************************/
+    function displayReport(lt1, lt2) {
+      const reportDiv = document.getElementById('report');
+      const lt1Div = document.getElementById('lt1-report');
+      const lt2Div = document.getElementById('lt2-report');
+
+      // Clear previous reports
+      lt1Div.innerHTML = '';
+      lt2Div.innerHTML = '';
+
+      if (lt1) {
+        lt1Div.innerHTML = `
+          <h3>LT1 Identified</h3>
+          <p><strong>Step Number:</strong> ${lt1.step_number}</p>
+          <p><strong>Intensity:</strong> ${lt1.intensity} units</p>
+          <p><strong>Heart Rate:</strong> ${lt1.heart_rate_bpm} bpm</p>
+          <p><strong>Lactate:</strong> ${lt1.lactate_mmol_l} mmol/L</p>
+        `;
+      } else {
+        lt1Div.innerHTML = `<h3>LT1 Not Identified</h3>`;
+      }
+
+      if (lt2) {
+        lt2Div.innerHTML = `
+          <h3>LT2 Identified</h3>
+          <p><strong>Step Number:</strong> ${lt2.step_number}</p>
+          <p><strong>Intensity:</strong> ${lt2.intensity} units</p>
+          <p><strong>Heart Rate:</strong> ${lt2.heart_rate_bpm} bpm</p>
+          <p><strong>Lactate:</strong> ${lt2.lactate_mmol_l} mmol/L</p>
+        `;
+      } else {
+        lt2Div.innerHTML = `<h3>LT2 Not Identified</h3>`;
+      }
+
+      // Show the report section
+      reportDiv.style.display = 'block';
+    }
+
+    /*********************************************************************
+     * 7. GENERATE MARKDOWN
+     *********************************************************************/
+    function generateMarkdown(steps, lt1, lt2) {
+      const markdownSection = document.getElementById('markdown-section');
+      const markdownContent = document.getElementById('markdown-content');
+
+      // Get current date and time
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString();
+      const formattedTime = now.toLocaleTimeString();
+
+      // Start building markdown
+      let md = `# Lactate Test Results from Lact8
+
+**Date and Time of Test:** ${formattedDate} ${formattedTime}
+
+**LT1:**
+`;
+
+      if (lt1) {
+        md += `- **Intensity:** ${lt1.intensity} units  
+- **Heart Rate:** ${lt1.heart_rate_bpm} bpm  
+`;
+      } else {
+        md += `- Not Identified  
+`;
+      }
+
+      md += `
+
+**LT2:**
+`;
+
+      if (lt2) {
+        md += `- **Intensity:** ${lt2.intensity} units  
+- **Heart Rate:** ${lt2.heart_rate_bpm} bpm  
+`;
+      } else {
+        md += `- Not Identified  
+`;
+      }
+
+      // Add table
+      md += `
+## Test Steps
+
+| Step # | Intensity (units) | Heart Rate (bpm) | Lactate (mmol/L) |
+|--------|-------------------|------------------|------------------|
+`;
+
+      steps.forEach(step => {
+        md += `| ${step.step_number} | ${step.intensity} | ${step.heart_rate_bpm} | ${step.lactate_mmol_l} |\n`;
+      });
+
+      // Set the markdown content
+      markdownContent.textContent = md;
+
+      // Show the markdown section
+      markdownSection.style.display = 'block';
+    }
+
+    /*********************************************************************
+     * 8. COPY MARKDOWN TO CLIPBOARD
+     *********************************************************************/
+    const copyBtn = document.getElementById('copyBtn');
+    copyBtn.addEventListener('click', () => {
+      const markdownContent = document.getElementById('markdown-content').textContent;
+      navigator.clipboard.writeText(markdownContent).then(() => {
+        alert('Markdown copied to clipboard!');
+      }).catch(err => {
+        alert('Failed to copy markdown: ', err);
+      });
+    });
+  </script>
+</body>
+</html>
