@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Step } from '../types';
+import { memo } from 'react';
 
 interface StepsTableProps {
   steps: Step[];
@@ -38,16 +39,183 @@ interface ValidationError {
   message: string;
 }
 
+// Memoized table row component
+const TableRow = memo(({ 
+  step, 
+  index, 
+  inputFields,
+  onRemove,
+  onUpdate,
+  getFieldError 
+}: { 
+  step: Step;
+  index: number;
+  inputFields: typeof INPUT_FIELDS;
+  onRemove: (id: number) => void;
+  onUpdate: (id: number, field: keyof Step, value: string) => void;
+  getFieldError: (stepId: number, field: keyof Step) => string | undefined;
+}) => {
+  return (
+    <tr className="hover:bg-secondary/50">
+      <td className="text-center px-1">
+        {index + 1}
+      </td>
+      {inputFields.map(field => (
+        <TableCell
+          key={`${step.id}-${field.key}`}
+          step={step}
+          index={index}
+          field={field}
+          onUpdate={onUpdate}
+          getFieldError={getFieldError}
+        />
+      ))}
+      <td className="text-center px-1">
+        <div className="flex justify-center">
+          <button 
+            onClick={() => onRemove(step.id)}
+            aria-label={`Remove step ${index + 1}`}
+            className="text-red-500 hover:text-red-700 w-6 h-6 inline-flex items-center justify-center leading-none"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+// Memoized table cell component
+const TableCell = memo(({ 
+  step, 
+  index, 
+  field,
+  onUpdate,
+  getFieldError 
+}: { 
+  step: Step;
+  index: number;
+  field: typeof INPUT_FIELDS[number];
+  onUpdate: (id: number, field: keyof Step, value: string) => void;
+  getFieldError: (stepId: number, field: keyof Step) => string | undefined;
+}) => {
+  const error = getFieldError(step.id, field.key);
+  const value = field.format 
+    ? field.format(step[field.key]) 
+    : step[field.key] || '';
+
+  return (
+    <td className="px-0.5">
+      <div className="relative w-full">
+        <input
+          id={`${field.key}-${step.id}`}
+          type="number"
+          value={value}
+          onChange={(e) => onUpdate(step.id, field.key, e.target.value)}
+          placeholder={field.config.placeholder}
+          min={field.config.min}
+          max={field.config.max}
+          step={field.config.step}
+          className={`data-input ${error ? 'border-red-500' : ''}`}
+          aria-label={`${field.label} for step ${index + 1}`}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${field.key}-error-${step.id}` : undefined}
+        />
+        {error && (
+          <div 
+            id={`${field.key}-error-${step.id}`}
+            className="absolute left-0 top-full mt-1 text-sm text-red-600"
+          >
+            {error}
+          </div>
+        )}
+      </div>
+    </td>
+  );
+});
+
+// Memoized input fields configuration
+const INPUT_FIELDS = [
+  { 
+    key: 'intensity', 
+    label: 'Intensity',
+    shortLabel: 'Int',
+    config: VALIDATION_RULES.intensity 
+  },
+  { 
+    key: 'heart_rate_bpm', 
+    label: 'Heart Rate',
+    shortLabel: 'HR',
+    config: VALIDATION_RULES.heart_rate_bpm 
+  },
+  { 
+    key: 'lactate_mmol_l', 
+    label: 'Lactate',
+    shortLabel: 'Lac',
+    config: VALIDATION_RULES.lactate_mmol_l,
+    format: (value: number) => value === 0 ? '' : value.toFixed(1)
+  }
+] as const;
+
 export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
   const nextIdRef = useRef(1);
   const [validationErrors, setValidationErrors] = useState<Record<number, ValidationError[]>>({});
 
-  // Helper function to generate unique IDs
-  const generateUniqueId = () => {
+  // Memoized helper functions
+  const generateUniqueId = useCallback(() => {
     const id = nextIdRef.current;
     nextIdRef.current += 1;
     return id;
-  };
+  }, []);
+
+  const validateField = useCallback((field: keyof Step, value: number): string | null => {
+    const rules = VALIDATION_RULES[field];
+    if (typeof value !== 'number' || isNaN(value)) {
+      return `Invalid ${field} value`;
+    }
+    if (value < rules.min || value > rules.max) {
+      return rules.errorMessage;
+    }
+    return null;
+  }, []);
+
+  const getFieldError = useCallback((stepId: number, field: keyof Step): string | undefined => {
+    return validationErrors[stepId]?.find(error => error.field === field)?.message;
+  }, [validationErrors]);
+
+  // Memoized event handlers
+  const updateStep = useCallback((id: number, field: keyof Step, rawValue: string) => {
+    const value = Number(rawValue);
+    const currentErrors = validationErrors[id] || [];
+    const otherErrors = currentErrors.filter(error => error.field !== field);
+    const error = validateField(field, value);
+    const newErrors = error ? [...otherErrors, { field, message: error }] : otherErrors;
+
+    setValidationErrors(prev => ({
+      ...prev,
+      [id]: newErrors
+    }));
+
+    onStepsChange(
+      steps.map(step => 
+        step.id === id ? { ...step, [field]: value } : step
+      )
+    );
+  }, [steps, validationErrors, validateField, onStepsChange]);
+
+  const removeStep = useCallback((id: number) => {
+    onStepsChange(steps.filter(step => step.id !== id));
+  }, [steps, onStepsChange]);
+
+  const addStep = useCallback(() => {
+    const newStep: Step = {
+      id: generateUniqueId(),
+      intensity: 0,
+      heart_rate_bpm: 0,
+      lactate_mmol_l: 0
+    };
+    onStepsChange([...steps, newStep]);
+  }, [steps, generateUniqueId, onStepsChange]);
 
   // Initialize with 5 empty rows only if no steps are provided
   useEffect(() => {
@@ -62,140 +230,6 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
     }
   }, []); // Keep dependency array empty to prevent re-initialization
 
-  // Helper function to validate a single field
-  const validateField = (field: keyof Step, value: number): string | null => {
-    const rules = VALIDATION_RULES[field];
-    if (typeof value !== 'number' || isNaN(value)) {
-      return `Invalid ${field} value`;
-    }
-    if (value < rules.min || value > rules.max) {
-      return rules.errorMessage;
-    }
-    return null;
-  };
-
-  // Enhanced updateStep with validation
-  const updateStep = (id: number, field: keyof Step, rawValue: string) => {
-    const value = Number(rawValue);
-    const currentErrors = validationErrors[id] || [];
-    
-    // Remove existing errors for this field
-    const otherErrors = currentErrors.filter(error => error.field !== field);
-    
-    // Validate new value
-    const error = validateField(field, value);
-    const newErrors = error 
-      ? [...otherErrors, { field, message: error }]
-      : otherErrors;
-
-    // Update validation errors state
-    setValidationErrors(prev => ({
-      ...prev,
-      [id]: newErrors
-    }));
-
-    // Update step value even if invalid (to allow typing)
-    onStepsChange(
-      steps.map(step => 
-        step.id === id ? { ...step, [field]: value } : step
-      )
-    );
-  };
-
-  // Enhanced addStep with validation
-  const addStep = () => {
-    const newStep: Step = {
-      id: generateUniqueId(),
-      intensity: 0,
-      heart_rate_bpm: 0,
-      lactate_mmol_l: 0
-    };
-    onStepsChange([...steps, newStep]);
-  };
-
-  const removeStep = (id: number) => {
-    onStepsChange(steps.filter(step => step.id !== id));
-  };
-
-  // Simplified input field configuration
-  const inputFields: Array<{
-    key: keyof Step;
-    label: string;
-    shortLabel: string;
-    config: typeof VALIDATION_RULES[keyof typeof VALIDATION_RULES];
-    format?: (value: number) => string;
-  }> = [
-    { 
-      key: 'intensity', 
-      label: 'Intensity',
-      shortLabel: 'Int',
-      config: VALIDATION_RULES.intensity 
-    },
-    { 
-      key: 'heart_rate_bpm', 
-      label: 'Heart Rate',
-      shortLabel: 'HR',
-      config: VALIDATION_RULES.heart_rate_bpm 
-    },
-    { 
-      key: 'lactate_mmol_l', 
-      label: 'Lactate',
-      shortLabel: 'Lac',
-      config: VALIDATION_RULES.lactate_mmol_l,
-      format: (value: number) => value === 0 ? '' : value.toFixed(1)
-    }
-  ];
-
-  // Reusable input field component
-  const InputField = ({ 
-    step, 
-    index, 
-    field 
-  }: { 
-    step: Step; 
-    index: number; 
-    field: typeof inputFields[number];
-  }) => {
-    const error = getFieldError(step.id, field.key);
-    const value = field.format 
-      ? field.format(step[field.key]) 
-      : step[field.key] || '';
-
-    return (
-      <td className="px-0.5">
-        <div className="relative w-full">
-          <input
-            id={`${field.key}-${step.id}`}
-            type="number"
-            value={value}
-            onChange={(e) => updateStep(step.id, field.key, e.target.value)}
-            placeholder={field.config.placeholder}
-            min={field.config.min}
-            max={field.config.max}
-            step={field.config.step}
-            className={`data-input ${error ? 'border-red-500' : ''}`}
-            aria-label={`${field.label} for step ${index + 1}`}
-            aria-invalid={!!error}
-            aria-describedby={error ? `${field.key}-error-${step.id}` : undefined}
-          />
-          {error && (
-            <div 
-              id={`${field.key}-error-${step.id}`}
-              className="absolute left-0 top-full mt-1 text-sm text-red-600"
-            >
-              {error}
-            </div>
-          )}
-        </div>
-      </td>
-    );
-  };
-
-  // Helper function to get field-specific error
-  const getFieldError = (stepId: number, field: keyof Step): string | undefined => {
-    return validationErrors[stepId]?.find(error => error.field === field)?.message;
-  };
-
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto w-full">
@@ -205,10 +239,8 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
         >
           <thead>
             <tr>
-              <th className="w-[5%] min-w-[2rem] px-1" scope="col">
-                #
-              </th>
-              {inputFields.map(field => (
+              <th className="w-[5%] min-w-[2rem] px-1" scope="col">#</th>
+              {INPUT_FIELDS.map(field => (
                 <th 
                   key={field.key} 
                   className="w-[30%] min-w-[6rem] px-0.5" 
@@ -225,30 +257,15 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
           </thead>
           <tbody>
             {steps.map((step, index) => (
-              <tr key={step.id} className="hover:bg-secondary/50">
-                <td className="text-center px-1">
-                  {index + 1}
-                </td>
-                {inputFields.map(field => (
-                  <InputField
-                    key={`${step.id}-${field.key}`}
-                    step={step}
-                    index={index}
-                    field={field}
-                  />
-                ))}
-                <td className="text-center px-1">
-                  <div className="flex justify-center">
-                    <button 
-                      onClick={() => removeStep(step.id)}
-                      aria-label={`Remove step ${index + 1}`}
-                      className="text-red-500 hover:text-red-700 w-6 h-6 inline-flex items-center justify-center leading-none"
-                    >
-                      <span aria-hidden="true">✕</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              <TableRow
+                key={step.id}
+                step={step}
+                index={index}
+                inputFields={INPUT_FIELDS}
+                onRemove={removeStep}
+                onUpdate={updateStep}
+                getFieldError={getFieldError}
+              />
             ))}
           </tbody>
         </table>
