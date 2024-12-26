@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Step } from '../types';
 
 interface StepsTableProps {
@@ -8,9 +8,39 @@ interface StepsTableProps {
   onStepsChange: (steps: Step[]) => void;
 }
 
+// Add validation constants
+const VALIDATION_RULES = {
+  intensity: {
+    min: 0,
+    max: 2000, // Reasonable max for power/speed
+    step: 1,
+    placeholder: "200",
+    errorMessage: "Intensity must be between 0 and 2000"
+  },
+  heart_rate_bpm: {
+    min: 0,
+    max: 250,
+    step: 1,
+    placeholder: "120",
+    errorMessage: "Heart rate must be between 0 and 250 bpm"
+  },
+  lactate_mmol_l: {
+    min: 0,
+    max: 30,
+    step: 0.1,
+    placeholder: "1.0",
+    errorMessage: "Lactate must be between 0 and 30 mmol/L"
+  }
+} as const;
+
+interface ValidationError {
+  field: keyof Step;
+  message: string;
+}
+
 export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
-  // Add a ref to keep track of the next ID
   const nextIdRef = useRef(1);
+  const [validationErrors, setValidationErrors] = useState<Record<number, ValidationError[]>>({});
 
   // Helper function to generate unique IDs
   const generateUniqueId = () => {
@@ -32,6 +62,47 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
     }
   }, []); // Keep dependency array empty to prevent re-initialization
 
+  // Helper function to validate a single field
+  const validateField = (field: keyof Step, value: number): string | null => {
+    const rules = VALIDATION_RULES[field];
+    if (typeof value !== 'number' || isNaN(value)) {
+      return `Invalid ${field} value`;
+    }
+    if (value < rules.min || value > rules.max) {
+      return rules.errorMessage;
+    }
+    return null;
+  };
+
+  // Enhanced updateStep with validation
+  const updateStep = (id: number, field: keyof Step, rawValue: string) => {
+    const value = Number(rawValue);
+    const currentErrors = validationErrors[id] || [];
+    
+    // Remove existing errors for this field
+    const otherErrors = currentErrors.filter(error => error.field !== field);
+    
+    // Validate new value
+    const error = validateField(field, value);
+    const newErrors = error 
+      ? [...otherErrors, { field, message: error }]
+      : otherErrors;
+
+    // Update validation errors state
+    setValidationErrors(prev => ({
+      ...prev,
+      [id]: newErrors
+    }));
+
+    // Update step value even if invalid (to allow typing)
+    onStepsChange(
+      steps.map(step => 
+        step.id === id ? { ...step, [field]: value } : step
+      )
+    );
+  };
+
+  // Enhanced addStep with validation
   const addStep = () => {
     const newStep: Step = {
       id: generateUniqueId(),
@@ -46,19 +117,16 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
     onStepsChange(steps.filter(step => step.id !== id));
   };
 
-  const updateStep = (id: number, field: keyof Step, value: number) => {
-    onStepsChange(
-      steps.map(step => 
-        step.id === id ? { ...step, [field]: value } : step
-      )
-    );
-  };
-
   const formatLactate = (value: number): string => {
     // Return empty string if value is 0 (for empty input field)
     if (value === 0) return '';
     // Format to always show one decimal place
     return value.toFixed(1);
+  };
+
+  // Helper function to get field-specific error
+  const getFieldError = (stepId: number, field: keyof Step): string | undefined => {
+    return validationErrors[stepId]?.find(error => error.field === field)?.message;
   };
 
   return (
@@ -98,77 +166,80 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                 </td>
                 <td className="px-0.5">
                   <div className="relative w-full">
-                    <label 
-                      htmlFor={`intensity-${step.id}`} 
-                      className="sr-only"
-                    >
-                      Intensity for step {index + 1}
-                    </label>
                     <input
                       id={`intensity-${step.id}`}
                       type="number"
                       value={step.intensity || ''}
-                      onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
-                      placeholder="200"
-                      className="data-input"
+                      onChange={(e) => updateStep(step.id, 'intensity', e.target.value)}
+                      placeholder={VALIDATION_RULES.intensity.placeholder}
+                      min={VALIDATION_RULES.intensity.min}
+                      max={VALIDATION_RULES.intensity.max}
+                      step={VALIDATION_RULES.intensity.step}
+                      className={`data-input ${getFieldError(step.id, 'intensity') ? 'border-red-500' : ''}`}
                       aria-label={`Intensity for step ${index + 1}`}
-                      min="0"
-                      aria-describedby={`intensity-hint-${step.id}`}
+                      aria-invalid={!!getFieldError(step.id, 'intensity')}
+                      aria-describedby={`intensity-error-${step.id}`}
                     />
-                    <span id={`intensity-hint-${step.id}`} className="sr-only">
-                      Enter power or speed value
-                    </span>
+                    {getFieldError(step.id, 'intensity') && (
+                      <div 
+                        id={`intensity-error-${step.id}`}
+                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
+                      >
+                        {getFieldError(step.id, 'intensity')}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-0.5">
                   <div className="relative w-full">
-                    <label 
-                      htmlFor={`heart-rate-${step.id}`} 
-                      className="sr-only"
-                    >
-                      Heart rate for step {index + 1}
-                    </label>
                     <input
                       id={`heart-rate-${step.id}`}
                       type="number"
                       value={step.heart_rate_bpm || ''}
-                      onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
-                      placeholder="120"
-                      className="data-input"
+                      onChange={(e) => updateStep(step.id, 'heart_rate_bpm', e.target.value)}
+                      placeholder={VALIDATION_RULES.heart_rate_bpm.placeholder}
+                      min={VALIDATION_RULES.heart_rate_bpm.min}
+                      max={VALIDATION_RULES.heart_rate_bpm.max}
+                      step={VALIDATION_RULES.heart_rate_bpm.step}
+                      className={`data-input ${getFieldError(step.id, 'heart_rate_bpm') ? 'border-red-500' : ''}`}
                       aria-label={`Heart rate for step ${index + 1}`}
-                      min="0"
-                      max="250"
-                      aria-describedby={`heart-rate-hint-${step.id}`}
+                      aria-invalid={!!getFieldError(step.id, 'heart_rate_bpm')}
+                      aria-describedby={`heart-rate-error-${step.id}`}
                     />
-                    <span id={`heart-rate-hint-${step.id}`} className="sr-only">
-                      Enter heart rate in beats per minute, between 0 and 250
-                    </span>
+                    {getFieldError(step.id, 'heart_rate_bpm') && (
+                      <div 
+                        id={`heart-rate-error-${step.id}`}
+                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
+                      >
+                        {getFieldError(step.id, 'heart_rate_bpm')}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-0.5">
                   <div className="relative w-full">
-                    <label 
-                      htmlFor={`lactate-${step.id}`} 
-                      className="sr-only"
-                    >
-                      Lactate for step {index + 1}
-                    </label>
                     <input
                       id={`lactate-${step.id}`}
                       type="number"
                       value={step.lactate_mmol_l ? formatLactate(step.lactate_mmol_l) : ''}
-                      onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
-                      placeholder="1.0"
-                      step="0.1"
-                      className="data-input"
+                      onChange={(e) => updateStep(step.id, 'lactate_mmol_l', e.target.value)}
+                      placeholder={VALIDATION_RULES.lactate_mmol_l.placeholder}
+                      min={VALIDATION_RULES.lactate_mmol_l.min}
+                      max={VALIDATION_RULES.lactate_mmol_l.max}
+                      step={VALIDATION_RULES.lactate_mmol_l.step}
+                      className={`data-input ${getFieldError(step.id, 'lactate_mmol_l') ? 'border-red-500' : ''}`}
                       aria-label={`Lactate for step ${index + 1}`}
-                      min="0"
-                      max="30"
-                      aria-describedby={`lactate-hint-${step.id}`}
+                      aria-invalid={!!getFieldError(step.id, 'lactate_mmol_l')}
+                      aria-describedby={`lactate-error-${step.id}`}
                     />
-                    <span id={`lactate-hint-${step.id}`} className="sr-only">
-                      Enter lactate value in millimoles per liter, between 0 and 30
-                    </span>
+                    {getFieldError(step.id, 'lactate_mmol_l') && (
+                      <div 
+                        id={`lactate-error-${step.id}`}
+                        className="absolute left-0 top-full mt-1 text-sm text-red-600"
+                      >
+                        {getFieldError(step.id, 'lactate_mmol_l')}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="text-center px-1">
