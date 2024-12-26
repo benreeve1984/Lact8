@@ -47,29 +47,35 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto w-full">
-        <table className="data-table min-w-[300px] w-full">
+        <table className="data-table">
           <thead>
             <tr>
-              <th className="w-8 px-1">#</th>
-              <th className="w-20 sm:w-32 px-0.5">
+              <th className="w-[5%] min-w-[2rem] px-1">
+                #
+              </th>
+              <th className="w-[30%] min-w-[6rem] px-0.5">
                 <span className="hidden sm:inline">Intensity</span>
                 <span className="sm:hidden">Int</span>
               </th>
-              <th className="w-20 sm:w-32 px-0.5">
+              <th className="w-[30%] min-w-[6rem] px-0.5">
                 <span className="hidden sm:inline">Heart Rate</span>
                 <span className="sm:hidden">HR</span>
               </th>
-              <th className="w-20 sm:w-32 px-0.5">
+              <th className="w-[30%] min-w-[6rem] px-0.5">
                 <span className="hidden sm:inline">Lactate</span>
                 <span className="sm:hidden">Lac</span>
               </th>
-              <th className="w-8 px-1"></th>
+              <th className="w-[5%] min-w-[2rem] px-1">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {steps.map((step, index) => (
               <tr key={step.id} className="hover:bg-secondary/50">
-                <td className="text-center px-1">{index + 1}</td>
+                <td className="text-center px-1">
+                  {index + 1}
+                </td>
                 <td className="px-0.5">
                   <div className="relative w-full">
                     <input
@@ -77,7 +83,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                       value={step.intensity || ''}
                       onChange={(e) => updateStep(step.id, 'intensity', Number(e.target.value))}
                       placeholder="200"
-                      className="data-input w-full px-1 py-1 text-center"
+                      className="data-input"
                       aria-label="Intensity (power or speed)"
                       min="0"
                     />
@@ -90,7 +96,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                       value={step.heart_rate_bpm || ''}
                       onChange={(e) => updateStep(step.id, 'heart_rate_bpm', Number(e.target.value))}
                       placeholder="120"
-                      className="data-input w-full px-1 py-1 text-center"
+                      className="data-input"
                       aria-label="Heart rate in beats per minute"
                       min="0"
                       max="250"
@@ -105,7 +111,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                       onChange={(e) => updateStep(step.id, 'lactate_mmol_l', Number(e.target.value))}
                       placeholder="1.0"
                       step="0.1"
-                      className="data-input w-full px-1 py-1 text-center"
+                      className="data-input"
                       aria-label="Lactate in millimoles per liter"
                       min="0"
                       max="30"
@@ -113,11 +119,11 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
                   </div>
                 </td>
                 <td className="text-center px-1">
-                  <div className="flex items-center justify-center">
+                  <div className="flex justify-center">
                     <button 
                       onClick={() => removeStep(step.id)}
                       aria-label="Remove step"
-                      className="text-red-500 hover:text-red-700 w-5 h-5 flex items-center justify-center"
+                      className="text-red-500 hover:text-red-700 w-6 h-6 inline-flex items-center justify-center leading-none"
                     >
                       ✕
                     </button>
