@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Step } from '../types';
 
 interface StepsTableProps {
@@ -9,11 +9,21 @@ interface StepsTableProps {
 }
 
 export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
+  // Add a ref to keep track of the next ID
+  const nextIdRef = useRef(1);
+
+  // Helper function to generate unique IDs
+  const generateUniqueId = () => {
+    const id = nextIdRef.current;
+    nextIdRef.current += 1;
+    return id;
+  };
+
   // Initialize with 5 empty rows only if no steps are provided
   useEffect(() => {
     if (steps.length === 0) {
-      const initialSteps: Step[] = Array.from({ length: 5 }, (_, i) => ({
-        id: Date.now() + i,
+      const initialSteps: Step[] = Array.from({ length: 5 }, () => ({
+        id: generateUniqueId(),
         intensity: 0,
         heart_rate_bpm: 0,
         lactate_mmol_l: 0
@@ -24,7 +34,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
 
   const addStep = () => {
     const newStep: Step = {
-      id: Date.now(),
+      id: generateUniqueId(),
       intensity: 0,
       heart_rate_bpm: 0,
       lactate_mmol_l: 0
