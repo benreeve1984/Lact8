@@ -5,6 +5,7 @@ import { Step } from '../types';
 import LactateChart from './LactateChart';
 import { CHART_DIMENSIONS } from '../constants/chart';
 import ChartContainer from './ChartContainer';
+import TestResults from './TestResults';
 
 interface ThresholdCalculatorProps {
   steps: Step[];
@@ -122,6 +123,8 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
           <LactateChart steps={steps} lt1={lt1} lt2={lt2} />
         </ChartContainer>
       )}
+
+      <TestResults steps={steps} lt1={lt1} lt2={lt2} />
     </div>
   );
 } 
