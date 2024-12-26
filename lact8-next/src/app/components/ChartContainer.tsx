@@ -35,7 +35,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
         maintainAspectRatio: false,
         layout: {
           padding: {
-            top: 5,
+            top: 20,
             right: 5,
             bottom: 5,
             left: 5
@@ -93,7 +93,20 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
         },
         plugins: {
           legend: {
-            display: false
+            display: true,
+            position: 'top',
+            align: 'center',
+            labels: {
+              boxWidth: 8,
+              boxHeight: 8,
+              padding: 10,
+              font: {
+                size: 11,
+                family: 'system-ui'
+              },
+              usePointStyle: true,
+              pointStyle: true
+            }
           },
           annotation: {
             annotations: {}
@@ -116,11 +129,16 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
 
     const sortedSteps = [...steps].sort((a, b) => a.intensity - b.intensity);
     const maxLactateValue = Math.max(...sortedSteps.map(s => s.lactate_mmol_l)) * 1.2;
+    
+    // Find the step with maximum lactate value
+    const maxLactateStep = sortedSteps.reduce((max, step) => 
+      step.lactate_mmol_l > max.lactate_mmol_l ? step : max
+    );
 
     // Update datasets
     chartInstance.current.data.datasets = [
       {
-        label: 'Lactate (mmol/L)',
+        label: 'Lactate',
         data: sortedSteps.map(step => ({
           x: step.intensity,
           y: step.lactate_mmol_l
@@ -133,7 +151,7 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
         pointStyle: 'circle'
       },
       {
-        label: 'Heart Rate (bpm)',
+        label: 'Heart Rate',
         data: sortedSteps.map(step => ({
           x: step.intensity,
           y: step.heart_rate_bpm
@@ -147,75 +165,52 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
       }
     ];
 
-    // Create annotations configuration
-    const annotations: any = {};
-
-    // Add LT1 line if lt1 exists
-    if (lt1) {
-      annotations.lt1Line = {
-        type: 'line',
-        xMin: lt1.intensity,
-        xMax: lt1.intensity,
-        yMin: 0,
-        yMax: maxLactateValue,
-        borderColor: 'rgba(255, 99, 132, 0.5)',
-        borderWidth: 2,
-        yScaleID: 'yLactate',
-        label: {
-          display: true,
-          content: 'LT1',
-          position: 'end',
-          yAdjust: -5,
-          font: {
-            size: 12,
-            family: 'system-ui'
-          }
+    // Helper function to create vertical line annotation
+    const createVerticalLine = (step: Step, label: string, color: string) => ({
+      type: 'line',
+      xMin: step.intensity,
+      xMax: step.intensity,
+      yMin: 0,
+      yMax: maxLactateValue,
+      borderColor: color,
+      borderWidth: 2,
+      yScaleID: 'yLactate',
+      label: {
+        display: true,
+        content: label,
+        position: 'end',
+        yAdjust: -5,
+        font: {
+          size: 12,
+          family: 'system-ui'
         }
-      };
+      }
+    });
 
-      // Add diagonal line only if LT1 exists
-      annotations.diagonalLine = {
-        type: 'line',
-        xMin: lt1.intensity,
-        yMin: lt1.lactate_mmol_l,
-        xMax: Math.max(...sortedSteps.map(s => s.intensity)),
-        yMax: Math.max(...sortedSteps.map(s => s.lactate_mmol_l)),
-        borderColor: 'rgba(200, 200, 200, 0.5)',
-        borderWidth: 2,
-        borderDash: [5, 5],
-        yScaleID: 'yLactate'
-      };
-    }
-
-    // Add LT2 line if lt2 exists
-    if (lt2) {
-      annotations.lt2Line = {
-        type: 'line',
-        xMin: lt2.intensity,
-        xMax: lt2.intensity,
-        yMin: 0,
-        yMax: maxLactateValue,
-        borderColor: 'rgba(255, 159, 64, 0.5)',
-        borderWidth: 2,
-        yScaleID: 'yLactate',
-        label: {
-          display: true,
-          content: 'LT2',
-          position: 'end',
-          yAdjust: -5,
-          font: {
-            size: 12,
-            family: 'system-ui'
-          }
+    // Build annotations object
+    const annotations = {
+      ...(lt1 && {
+        lt1Line: createVerticalLine(lt1, 'LT1', 'rgba(255, 99, 132, 0.5)'),
+        diagonalLine: {
+          type: 'line',
+          xMin: lt1.intensity,
+          yMin: lt1.lactate_mmol_l,
+          xMax: maxLactateStep.intensity,
+          yMax: maxLactateStep.lactate_mmol_l,
+          borderColor: 'rgba(200, 200, 200, 0.5)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          yScaleID: 'yLactate'
         }
-      };
-    }
+      }),
+      ...(lt2 && {
+        lt2Line: createVerticalLine(lt2, 'LT2', 'rgba(255, 159, 64, 0.5)')
+      })
+    };
 
     // Update annotations
     if (chartInstance.current.options.plugins?.annotation) {
-      chartInstance.current.options.plugins.annotation = {
-        annotations: annotations
-      };
+      chartInstance.current.options.plugins.annotation = { annotations };
     }
 
     // Update y-axis scale for lactate
@@ -224,9 +219,9 @@ export default function ChartContainer({ steps, lt1, lt2 }: ChartContainerProps)
     }
 
     // Update the chart
-    chartInstance.current.update('none'); // 'none' mode for better performance
+    chartInstance.current.update('none');
 
-  }, [steps, lt1, lt2]); // Only run when these props change
+  }, [steps, lt1, lt2]);
 
   return (
     <div className="chart-container">
