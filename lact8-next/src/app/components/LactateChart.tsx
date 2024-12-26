@@ -13,6 +13,8 @@ import {
 import { Line } from 'react-chartjs-2';
 import { Step } from '../types';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import { CHART_DIMENSIONS } from '../constants/chart';
+import ChartContainer from './ChartContainer';
 
 // Register Chart.js components
 ChartJS.register(
@@ -33,78 +35,149 @@ interface LactateChartProps {
 }
 
 export default function LactateChart({ steps, lt1, lt2 }: LactateChartProps) {
-  // Prepare data for the chart
+  // Sort steps by intensity for proper line drawing
+  const sortedSteps = [...steps].sort((a, b) => a.intensity - b.intensity);
+  
+  // Find max lactate step for diagonal line
+  const maxLactate = Math.max(...steps.map(s => s.lactate_mmol_l));
+  const maxLactateSteps = steps.filter(s => s.lactate_mmol_l === maxLactate);
+  const maxStep = maxLactateSteps.reduce((acc, curr) => 
+    curr.intensity > acc.intensity ? curr : acc
+  );
+
   const data = {
-    labels: steps.map(step => step.intensity.toString()),
     datasets: [
       {
-        label: 'Lactate',
-        data: steps.map(step => step.lactate_mmol_l),
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
-        pointRadius: 6,
+        label: 'Lactate (mmol/L)',
+        data: sortedSteps.map(s => ({ x: s.intensity, y: s.lactate_mmol_l })),
+        borderColor: 'blue',
+        backgroundColor: 'blue',
+        yAxisID: 'yLactate',
+        tension: 0,
+        pointStyle: 'circle',
+        radius: 4,
+        borderWidth: 2
+      },
+      {
+        label: 'Heart Rate (bpm)',
+        data: sortedSteps.map(s => ({ x: s.intensity, y: s.heart_rate_bpm })),
+        borderColor: 'orange',
+        backgroundColor: 'orange',
+        yAxisID: 'yHeartRate',
+        tension: 0,
+        pointStyle: 'rect',
+        radius: 4,
+        borderWidth: 2
       }
     ]
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
     plugins: {
       legend: {
         position: 'top' as const,
       },
-      title: {
-        display: true,
-        text: 'Lactate Curve',
-      },
       annotation: {
         annotations: {
-          lt1Line: lt1 ? {
-            type: 'line',
-            xMin: lt1.intensity,
-            xMax: lt1.intensity,
-            borderColor: 'rgba(255, 99, 132, 0.5)',
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: 'LT1',
-              position: 'start'
+          ...(lt1 && {
+            diagonalLine: {
+              type: 'line',
+              xMin: lt1.intensity,
+              yMin: lt1.lactate_mmol_l,
+              xMax: maxStep.intensity,
+              yMax: maxStep.lactate_mmol_l,
+              borderColor: 'lightgrey',
+              borderWidth: 2,
+              borderDash: [3, 3],
+              yScaleID: 'yLactate',
+              z: -1
+            },
+            lt1Line: {
+              type: 'line',
+              xMin: lt1.intensity,
+              xMax: lt1.intensity,
+              borderColor: 'rgba(255, 99, 132, 0.7)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              label: {
+                display: true,
+                content: 'LT1',
+                position: 'start'
+              },
+              z: 1
             }
-          } : undefined,
-          lt2Line: lt2 ? {
-            type: 'line',
-            xMin: lt2.intensity,
-            xMax: lt2.intensity,
-            borderColor: 'rgba(255, 206, 86, 0.5)',
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: 'LT2',
-              position: 'start'
+          }),
+          ...(lt2 && {
+            lt2Line: {
+              type: 'line',
+              xMin: lt2.intensity,
+              xMax: lt2.intensity,
+              borderColor: 'rgba(255, 205, 86, 0.7)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              label: {
+                display: true,
+                content: 'LT2',
+                position: 'start'
+              },
+              z: 1
             }
-          } : undefined,
+          })
         }
       }
     },
     scales: {
       x: {
+        type: 'linear',
+        display: true,
         title: {
           display: true,
           text: 'Intensity'
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)'
         }
       },
-      y: {
+      yLactate: {
+        type: 'linear',
+        display: true,
+        position: 'left',
         title: {
           display: true,
           text: 'Lactate (mmol/L)'
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)'
+        }
+      },
+      yHeartRate: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        title: {
+          display: true,
+          text: 'Heart Rate (bpm)'
+        },
+        grid: {
+          drawOnChartArea: false
         }
       }
     }
   };
 
   return (
-    <div className="w-full h-[400px] bg-white p-4 rounded-lg shadow">
-      <Line data={data} options={options} />
-    </div>
+    <ChartContainer>
+      <Line 
+        data={data} 
+        options={options}
+        style={{ height: '100%' }}
+      />
+    </ChartContainer>
   );
 } 

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Step } from '../types';
 import LactateChart from './LactateChart';
+import { CHART_DIMENSIONS } from '../constants/chart';
+import ChartContainer from './ChartContainer';
 
 interface ThresholdCalculatorProps {
   steps: Step[];
@@ -83,8 +85,8 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-center">
+    <div>
+      <div className="flex justify-center mb-6">
         <button
           onClick={calculateThresholds}
           className="btn btn-success"
@@ -94,7 +96,7 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
       </div>
 
       {(lt1 || lt2) && (
-        <div className="results-container">
+        <div className="results-container max-w-3xl mx-auto mb-6">
           <h2 className="text-xl font-bold mb-4">Results:</h2>
           {lt1 && (
             <div className="mb-4">
@@ -116,9 +118,9 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
       )}
 
       {showChart && steps.length > 0 && (
-        <div className="chart-container">
+        <ChartContainer>
           <LactateChart steps={steps} lt1={lt1} lt2={lt2} />
-        </div>
+        </ChartContainer>
       )}
     </div>
   );

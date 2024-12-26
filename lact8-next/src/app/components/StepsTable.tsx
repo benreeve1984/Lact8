@@ -9,7 +9,7 @@ interface StepsTableProps {
 }
 
 export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
-  // Initialize with 5 empty rows
+  // Initialize with 5 empty rows only if no steps are provided
   useEffect(() => {
     if (steps.length === 0) {
       const initialSteps: Step[] = Array.from({ length: 5 }, (_, i) => ({
@@ -20,7 +20,7 @@ export default function StepsTable({ steps, onStepsChange }: StepsTableProps) {
       }));
       onStepsChange(initialSteps);
     }
-  }, []);
+  }, []);  // Remove steps and onStepsChange from dependencies to prevent re-initialization
 
   const addStep = () => {
     const newStep: Step = {
