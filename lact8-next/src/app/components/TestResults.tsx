@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Step } from '../types';
 import ChartContainer from './ChartContainer';
 
@@ -53,7 +54,8 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
     }
   ];
 
-  const generateMarkdown = (): string => {
+  // Memoize the markdown content
+  const markdownContent = useMemo(() => {
     const sections: MarkdownSection[] = [
       {
         title: '# Lactate Test Results\n',
@@ -99,12 +101,11 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
     return sections
       .map(section => [section.title, ...section.content].join('\n'))
       .join('\n\n');
-  };
+  }, [steps, lt1, lt2, thresholdData]); // Dependencies array includes all values used in the calculation
 
   const copyToClipboard = async () => {
-    const markdown = generateMarkdown();
     try {
-      await navigator.clipboard.writeText(markdown);
+      await navigator.clipboard.writeText(markdownContent);
       alert('Results copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -178,7 +179,7 @@ export default function TestResults({ steps, lt1, lt2 }: TestResultsProps) {
         </div>
         <pre className="p-3 sm:p-4 bg-secondary rounded-lg shadow-sm overflow-x-auto 
                       text-[16px] sm:text-[16px] font-mono">
-          {generateMarkdown()}
+          {markdownContent}
         </pre>
       </div>
     </div>
