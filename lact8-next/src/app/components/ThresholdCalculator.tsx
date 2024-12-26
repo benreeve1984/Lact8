@@ -1,11 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { Step } from '../types';
 import TestResults from './TestResults';
 
 interface ThresholdCalculatorProps {
   steps: Step[];
+}
+
+interface ThresholdState {
+  lt1: Step | null;
+  lt2: Step | null;
+  error: string | null;
+  hasCalculated: boolean;
+}
+
+type ThresholdAction =
+  | { type: 'RESET' }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'SET_THRESHOLDS'; payload: { lt1: Step | null; lt2: Step | null } }
+  | { type: 'CALCULATION_COMPLETE' };
+
+const initialState: ThresholdState = {
+  lt1: null,
+  lt2: null,
+  error: null,
+  hasCalculated: false,
+};
+
+function thresholdReducer(state: ThresholdState, action: ThresholdAction): ThresholdState {
+  switch (action.type) {
+    case 'RESET':
+      return { ...initialState };
+    
+    case 'SET_ERROR':
+      return {
+        ...initialState,
+        error: action.payload,
+        hasCalculated: true,
+      };
+    
+    case 'SET_THRESHOLDS':
+      return {
+        ...state,
+        lt1: action.payload.lt1,
+        lt2: action.payload.lt2,
+        error: null,
+      };
+    
+    case 'CALCULATION_COMPLETE':
+      return {
+        ...state,
+        hasCalculated: true,
+      };
+    
+    default:
+      return state;
+  }
 }
 
 // Helper function to calculate distance from point to line
@@ -95,18 +146,13 @@ function validateStepsOrder(steps: Step[]): string | null {
 }
 
 export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps) {
-  const [lt1, setLt1] = useState<Step | null>(null);
-  const [lt2, setLt2] = useState<Step | null>(null);
-  const [hasCalculated, setHasCalculated] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(thresholdReducer, initialState);
+  const { lt1, lt2, error, hasCalculated } = state;
 
   const calculateThresholds = () => {
     try {
-      // Reset states
-      setError(null);
-      setLt1(null);
-      setLt2(null);
-      setHasCalculated(true);
+      // Reset state at the start of calculation
+      dispatch({ type: 'RESET' });
 
       // Basic validation
       if (!Array.isArray(steps)) {
@@ -153,8 +199,8 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
         throw new Error('Could not identify LT1 - check data progression');
       }
 
-      // Set LT1
-      setLt1(sortedSteps[lt1Index]);
+      let calculatedLt1 = sortedSteps[lt1Index];
+      let calculatedLt2 = null;
 
       try {
         // Find LT2
@@ -162,17 +208,25 @@ export default function ThresholdCalculator({ steps }: ThresholdCalculatorProps)
         const lt2Index = findLT2(sortedSteps, lt1Index, maxStep);
         
         if (lt2Index !== -1) {
-          setLt2(sortedSteps[lt2Index]);
-        } else {
-          console.warn('LT2 could not be identified - this is normal for some datasets');
+          calculatedLt2 = sortedSteps[lt2Index];
         }
       } catch (lt2Error) {
         console.warn('Error calculating LT2:', lt2Error);
-        // Don't throw - LT2 calculation failure shouldn't invalidate LT1
+        // LT2 calculation failure doesn't invalidate LT1
       }
 
+      // Batch update the thresholds and completion state
+      dispatch({ 
+        type: 'SET_THRESHOLDS', 
+        payload: { lt1: calculatedLt1, lt2: calculatedLt2 } 
+      });
+      dispatch({ type: 'CALCULATION_COMPLETE' });
+
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error instanceof Error ? error.message : 'An unexpected error occurred'
+      });
       console.error('Threshold calculation error:', error);
     }
   };
